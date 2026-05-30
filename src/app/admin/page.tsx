@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { CreateFixtureForm } from "@/components/CreateFixtureForm"
 import { SetResultForm } from "@/components/SetResultForm"
+import { SyncResultsButton } from "@/components/SyncResultsButton"
 import { formatDate } from "@/lib/utils"
 
 export const revalidate = 0
@@ -30,6 +31,15 @@ export default async function AdminPage() {
           Sesión como <strong>{session.user.email}</strong>
         </p>
       </div>
+
+      {/* Sync results */}
+      <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-1 text-lg font-semibold">Sincronizar resultados</h2>
+        <p className="mb-4 text-sm text-gray-500">
+          Importa resultados finalizados desde football-data.org y actualiza los puntos automáticamente.
+        </p>
+        <SyncResultsButton />
+      </section>
 
       {/* Create fixture */}
       <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
