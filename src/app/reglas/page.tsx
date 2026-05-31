@@ -18,9 +18,9 @@ export default function ReglasPage() {
           />
           <RuleRow
             label="Resultado Exacto (Pleno)"
-            sublabel="No suma puntos, pero cuenta para desempate"
-            points={0}
-            badge="+1 desempate"
+            sublabel="Suma tendencia + bonus por exactitud. También cuenta para desempate."
+            points={2}
+            badge="+1 bonus"
           />
         </div>
       </Section>
@@ -29,12 +29,14 @@ export default function ReglasPage() {
       <Section title="Fase Eliminatoria (Mata-Mata)" icon="⚔️">
         <p className="mb-4 text-sm text-gray-500 dark:text-neutral-400">
           Una vez finalizada la fase de grupos se habilita la carga para las rondas finales.
+          La dificultad sube, ¡y los puntos también!
         </p>
         <div className="space-y-3">
-          <RuleRow label="Octavos de Final" sublabel="Acierto de tendencia" points={2} />
-          <RuleRow label="Cuartos de Final" sublabel="Acierto de tendencia" points={3} />
-          <RuleRow label="Semifinales" sublabel="Acierto de tendencia" points={4} />
-          <RuleRow label="Final y 3er Puesto" sublabel="Acierto de tendencia" points={5} />
+          <RuleRow label="Dieciseisavos de Final" sublabel="Acierto de tendencia" points={2} />
+          <RuleRow label="Octavos de Final" sublabel="Acierto de tendencia" points={3} />
+          <RuleRow label="Cuartos de Final" sublabel="Acierto de tendencia" points={4} />
+          <RuleRow label="Semifinales" sublabel="Acierto de tendencia" points={5} />
+          <RuleRow label="Final y 3er Puesto" sublabel="Acierto de tendencia" points={6} />
         </div>
       </Section>
 
@@ -56,20 +58,56 @@ export default function ReglasPage() {
         </p>
         <div className="space-y-3">
           <RuleRow
-            label="Equipo Revelación"
-            sublabel="Solo si el equipo llega a Cuartos y nunca antes había superado Octavos"
+            label="MVP del Mundial"
+            sublabel="MVP del torneo elegido por la FIFA"
             points={5}
+          />
+          <RuleRow
+            label="Pichichi"
+            sublabel="Goleador del torneo"
+            points={5}
+          />
+          <RuleRow
+            label="Equipo Revelación"
+            sublabel="Selección que nunca había superado los Octavos en su historia y llega a Cuartos o más"
+            points={3}
           />
           <RuleRow
             label="Premio Fair Play"
             sublabel="Equipo con menor cantidad de tarjetas al finalizar el Mundial"
-            points={5}
+            points={3}
           />
           <RuleRow
             label="Premio Rústico"
-            sublabel="Equipo con mayor cantidad de tarjetas acumuladas"
-            points={5}
+            sublabel="Equipo con mayor cantidad de tarjetas acumuladas (Amarilla = 1 pt, Roja = 3 pts)"
+            points={3}
           />
+          <RuleRow
+            label="Premio Desastroza"
+            sublabel="Selección más goleada del torneo"
+            points={3}
+          />
+          <RuleRow
+            label="Premio Decepción"
+            sublabel="Selección TOP 10 del ranking FIFA que no supera la Fase de Grupos"
+            points={3}
+          />
+        </div>
+      </Section>
+
+      {/* Resumen */}
+      <Section title="Resumen de puntos máximos" icon="📊">
+        <div className="space-y-2">
+          <SummaryRow label="Fase de Grupos (72 partidos)" value="hasta 144 pts" />
+          <SummaryRow label="Fase Eliminatoria (46 partidos)" value="hasta 142 pts" />
+          <SummaryRow label="Campeón + Subcampeón" value="hasta 23 pts" />
+          <SummaryRow label="7 Premios Especiales" value="hasta 25 pts" />
+          <div className="mt-3 rounded-xl bg-gray-900 px-4 py-3 dark:bg-white/5">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-white dark:text-white">Total máximo posible</span>
+              <span className="font-bold text-emerald-400">334 pts</span>
+            </div>
+          </div>
         </div>
       </Section>
     </div>
@@ -125,6 +163,15 @@ function RuleRow({
           {points === 0 ? "—" : `+${points}`}
         </span>
       </div>
+    </div>
+  )
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-2.5 dark:bg-neutral-800/50">
+      <span className="text-sm text-gray-600 dark:text-neutral-400">{label}</span>
+      <span className="text-sm font-semibold text-gray-900 dark:text-neutral-100">{value}</span>
     </div>
   )
 }
