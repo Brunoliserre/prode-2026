@@ -42,6 +42,12 @@ export async function NavBar({ emblemUrl }: { emblemUrl?: string }) {
               Predicciones
             </Link>
             <Link
+              href="/estadisticas"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
+            >
+              Estadísticas
+            </Link>
+            <Link
               href="/reglas"
               className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white"
             >
