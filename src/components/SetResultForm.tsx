@@ -33,7 +33,7 @@ export function SetResultForm({ fixtureId, currentHome, currentAway }: Props) {
   }
 
   const inputClass =
-    "w-12 rounded border border-gray-300 p-1 text-center text-sm font-mono focus:border-blue-400 focus:outline-none"
+    "w-12 rounded border border-gray-300 bg-white p-1 text-center text-sm font-mono text-gray-900 focus:border-blue-400 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
 
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-1.5">
@@ -42,7 +42,7 @@ export function SetResultForm({ fixtureId, currentHome, currentAway }: Props) {
         onChange={(e) => { setHome(e.target.value); setStatus("idle") }}
         className={inputClass} placeholder="–" required
       />
-      <span className="font-mono text-gray-400 text-xs">–</span>
+      <span className="font-mono text-xs text-gray-400 dark:text-neutral-500">–</span>
       <input
         type="number" min={0} max={30} value={away}
         onChange={(e) => { setAway(e.target.value); setStatus("idle") }}
@@ -50,7 +50,7 @@ export function SetResultForm({ fixtureId, currentHome, currentAway }: Props) {
       />
       <button
         type="submit" disabled={isPending}
-        className="rounded bg-green-700 px-2 py-1 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-60 transition-colors"
+        className="rounded bg-green-700 px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-green-800 disabled:opacity-60"
       >
         {isPending ? "…" : "Guardar"}
       </button>

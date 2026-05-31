@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { CreateFixtureForm } from "@/components/CreateFixtureForm"
 import { SetResultForm } from "@/components/SetResultForm"
 import { SyncResultsButton } from "@/components/SyncResultsButton"
+import { SyncFixturesButton } from "@/components/SyncFixturesButton"
 import { formatDate } from "@/lib/utils"
 
 export const revalidate = 0
@@ -24,63 +24,70 @@ export default async function AdminPage() {
   const pending = fixtures.filter((f) => f.homeScore == null)
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-[#1a3a6b]">Panel de administración</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Sesión como <strong>{session.user.email}</strong>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Panel de administración</h1>
+        <p className="mt-1 text-sm text-gray-400 dark:text-neutral-500">
+          Sesión como <span className="text-gray-600 dark:text-neutral-300">{session.user.email}</span>
         </p>
       </div>
 
-      {/* Sync results */}
-      <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-1 text-lg font-semibold">Sincronizar resultados</h2>
-        <p className="mb-4 text-sm text-gray-500">
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">
+        <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-white">Importar partidos desde API</h2>
+        <p className="mb-4 text-sm text-gray-400 dark:text-neutral-500">
+          Crea los partidos del Mundial 2026 importándolos desde football-data.org. Solo crea partidos nuevos, no elimina los existentes.
+        </p>
+        <SyncFixturesButton />
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">
+        <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-white">Sincronizar resultados</h2>
+        <p className="mb-4 text-sm text-gray-400 dark:text-neutral-500">
           Importa resultados finalizados desde football-data.org y actualiza los puntos automáticamente.
         </p>
         <SyncResultsButton />
       </section>
 
-      {/* Create fixture */}
-      <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold">Crear partido</h2>
-        <CreateFixtureForm />
-      </section>
-
-      {/* Pending results */}
       <section>
-        <h2 className="mb-3 text-lg font-semibold">
-          Partidos pendientes de resultado{" "}
-          <span className="text-sm font-normal text-gray-400">({pending.length})</span>
+        <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-white">
+          Partidos pendientes{" "}
+          <span className="text-sm font-normal text-gray-400 dark:text-neutral-600">({pending.length})</span>
         </h2>
         {pending.length === 0 ? (
-          <p className="text-sm text-gray-400">Todos los partidos tienen resultado.</p>
+          <p className="text-sm text-gray-400 dark:text-neutral-600">Todos los partidos tienen resultado.</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/5 dark:bg-neutral-900">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50 text-left">
-                  <th className="px-4 py-3 font-semibold text-gray-600">Partido</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600 hidden sm:table-cell">Fecha</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600 hidden sm:table-cell">Pronósticos</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600">Resultado</th>
+                <tr className="border-b border-gray-200 bg-gray-100/50 text-left dark:border-white/5 dark:bg-neutral-800/50">
+                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">Partido</th>
+                  <th className="hidden px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">
+                    Fecha
+                  </th>
+                  <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">
+                    Pronósticos
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">Resultado</th>
                 </tr>
               </thead>
               <tbody>
                 {pending.map((f) => (
-                  <tr key={f.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium whitespace-nowrap">
+                  <tr
+                    key={f.id}
+                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50 dark:border-white/5 dark:hover:bg-white/[0.03]"
+                  >
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-800 dark:text-neutral-100">
                       {f.group && (
-                        <span className="mr-2 rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-600 font-semibold">
+                        <span className="mr-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500 dark:bg-neutral-800 dark:text-neutral-400">
                           G{f.group}
                         </span>
                       )}
                       {f.homeTeam} vs {f.awayTeam}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 hidden sm:table-cell whitespace-nowrap">
+                    <td className="hidden whitespace-nowrap px-4 py-3 text-gray-400 dark:text-neutral-500 sm:table-cell">
                       {formatDate(f.matchDate)}
                     </td>
-                    <td className="px-4 py-3 text-center hidden sm:table-cell">
+                    <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">
                       {f._count.predictions}
                     </td>
                     <td className="px-4 py-3">
@@ -94,39 +101,45 @@ export default async function AdminPage() {
         )}
       </section>
 
-      {/* Finished fixtures */}
       {finished.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold">
+          <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-white">
             Partidos con resultado{" "}
-            <span className="text-sm font-normal text-gray-400">({finished.length})</span>
+            <span className="text-sm font-normal text-gray-400 dark:text-neutral-600">({finished.length})</span>
           </h2>
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/5 dark:bg-neutral-900">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50 text-left">
-                  <th className="px-4 py-3 font-semibold text-gray-600">Partido</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600 hidden sm:table-cell">Fecha</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600 text-center">Resultado</th>
-                  <th className="px-4 py-3 font-semibold text-gray-600">Corregir</th>
+                <tr className="border-b border-gray-200 bg-gray-100/50 text-left dark:border-white/5 dark:bg-neutral-800/50">
+                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">Partido</th>
+                  <th className="hidden px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">
+                    Fecha
+                  </th>
+                  <th className="px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400">
+                    Resultado
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">Corregir</th>
                 </tr>
               </thead>
               <tbody>
                 {finished.map((f) => (
-                  <tr key={f.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium whitespace-nowrap">
+                  <tr
+                    key={f.id}
+                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50 dark:border-white/5 dark:hover:bg-white/[0.03]"
+                  >
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-800 dark:text-neutral-100">
                       {f.group && (
-                        <span className="mr-2 rounded bg-green-50 px-1.5 py-0.5 text-xs text-green-700 font-semibold">
+                        <span className="mr-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500 dark:bg-neutral-800 dark:text-neutral-400">
                           G{f.group}
                         </span>
                       )}
                       {f.homeTeam} vs {f.awayTeam}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 hidden sm:table-cell whitespace-nowrap">
+                    <td className="hidden whitespace-nowrap px-4 py-3 text-gray-400 dark:text-neutral-500 sm:table-cell">
                       {formatDate(f.matchDate)}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="rounded bg-gray-800 px-2 py-0.5 font-mono text-xs font-bold text-white">
+                      <span className="rounded-lg bg-gray-100 px-3 py-1 font-mono text-xs font-bold text-gray-900 dark:bg-neutral-800 dark:text-white">
                         {f.homeScore} – {f.awayScore}
                       </span>
                     </td>

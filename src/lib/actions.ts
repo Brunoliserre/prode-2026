@@ -30,6 +30,25 @@ export async function submitPrediction(
   revalidatePath("/fixtures")
 }
 
+// ── Profile ────────────────────────────────────────────────────────────────────
+
+export async function updateProfile(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error("No autenticado")
+
+  const name = (formData.get("name") as string).trim()
+  const image = (formData.get("image") as string).trim() || null
+
+  if (!name) throw new Error("El nombre no puede estar vacío")
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { name, image },
+  })
+
+  revalidatePath("/", "layout")
+}
+
 // ── Admin: fixtures ────────────────────────────────────────────────────────────
 
 export async function createFixture(formData: FormData) {
