@@ -62,17 +62,17 @@ async function LandingPage() {
 
 async function LeaderboardPage() {
   const users = await prisma.user.findMany({
-    include: { predictions: true },
+    include: { predictions: true, tournamentPicks: true },
     orderBy: { name: "asc" },
   })
 
   const rows = users
     .map((u) => {
-      const total = u.predictions.reduce((s, p) => s + p.points, 0)
-      const exact = u.predictions.filter((p) => p.points === 3).length
-      const correct = u.predictions.filter((p) => p.points === 1).length
-      const played = u.predictions.length
-      return { id: u.id, name: u.name, image: u.image, total, exact, correct, played }
+      const matchPts = u.predictions.reduce((s, p) => s + p.points, 0)
+      const pickPts  = u.tournamentPicks.reduce((s, p) => s + p.points, 0)
+      const total    = matchPts + pickPts
+      const played   = u.predictions.length
+      return { id: u.id, name: u.name, image: u.image, total, matchPts, pickPts, played }
     })
     .sort((a, b) => b.total - a.total)
 
@@ -94,8 +94,8 @@ async function LeaderboardPage() {
                 <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">#</th>
                 <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">Jugador</th>
                 <th className="px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400">Pts</th>
-                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Exactos</th>
-                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Resultado</th>
+                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Partidos</th>
+                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Torneo</th>
                 <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Pronósticos</th>
               </tr>
             </thead>
@@ -119,8 +119,8 @@ async function LeaderboardPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">{row.total}</td>
-                  <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.exact}</td>
-                  <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.correct}</td>
+                  <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.matchPts}</td>
+                  <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.pickPts}</td>
                   <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.played}</td>
                 </tr>
               ))}

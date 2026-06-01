@@ -22,13 +22,28 @@ export function matchResult(home: number, away: number): "home" | "away" | "draw
   return "draw"
 }
 
+const STAGE_POINTS: Record<string, number> = {
+  LAST_32:        2,
+  LAST_16:        3,
+  QUARTER_FINALS: 4,
+  SEMI_FINALS:    5,
+  THIRD_PLACE:    6,
+  FINAL:          6,
+}
+
 export function calcPoints(
   actualHome: number,
   actualAway: number,
   predHome: number,
   predAway: number,
+  stage?: string | null,
 ): number {
-  if (predHome === actualHome && predAway === actualAway) return 3
-  if (matchResult(predHome, predAway) === matchResult(actualHome, actualAway)) return 1
-  return 0
+  const tendency = matchResult(predHome, predAway) === matchResult(actualHome, actualAway)
+  if (!tendency) return 0
+
+  const isExact = predHome === actualHome && predAway === actualAway
+  const isGroup = !stage || stage === "GROUP_STAGE"
+
+  if (isGroup) return isExact ? 2 : 1
+  return STAGE_POINTS[stage] ?? 2
 }

@@ -74,12 +74,12 @@ export default function ReglasPage() {
           />
           <RuleRow
             label="Premio Fair Play"
-            sublabel="Equipo con menor cantidad de tarjetas al finalizar el Mundial"
+            sublabel="Equipo con menor puntaje de tarjetas al finalizar el Mundial"
             points={3}
           />
           <RuleRow
             label="Premio Rústico"
-            sublabel="Equipo con mayor cantidad de tarjetas acumuladas (Amarilla = 1 pt, Roja = 3 pts)"
+            sublabel="Equipo con mayor puntaje de tarjetas (Amarilla = 1 pt, Roja = 3 pts) al finalizar el Mundial"
             points={3}
           />
           <RuleRow

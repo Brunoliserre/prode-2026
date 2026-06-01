@@ -11,14 +11,14 @@ export default async function ProfilePage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { predictions: true },
+    include: { predictions: true, tournamentPicks: true },
   })
   if (!user) redirect("/")
 
-  const total = user.predictions.reduce((s, p) => s + p.points, 0)
-  const exact = user.predictions.filter((p) => p.points === 3).length
-  const correct = user.predictions.filter((p) => p.points === 1).length
-  const played = user.predictions.length
+  const matchPts = user.predictions.reduce((s, p) => s + p.points, 0)
+  const pickPts  = user.tournamentPicks.reduce((s, p) => s + p.points, 0)
+  const total    = matchPts + pickPts
+  const played   = user.predictions.length
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
@@ -29,9 +29,9 @@ export default async function ProfilePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3">
-        <StatCard label="Puntos" value={total} highlight />
-        <StatCard label="Exactos" value={exact} />
-        <StatCard label="Resultado" value={correct} />
+        <StatCard label="Total" value={total} highlight />
+        <StatCard label="Partidos" value={matchPts} />
+        <StatCard label="Torneo" value={pickPts} />
         <StatCard label="Jugados" value={played} />
       </div>
 

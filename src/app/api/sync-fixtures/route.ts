@@ -101,6 +101,7 @@ export async function GET(req: NextRequest) {
           matchDate,
           group,
           matchday,
+          stage: m.stage ?? null,
           homeScore: finished ? homeScore : null,
           awayScore: finished ? awayScore : null,
         },

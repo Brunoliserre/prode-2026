@@ -8,6 +8,9 @@ import { ALL_TEAMS } from "@/lib/flags"
 
 export const revalidate = 0
 
+// World Cup 2026 start date — picks lock after this
+const TOURNAMENT_START = new Date("2026-06-11T00:00:00-05:00")
+
 type UserPrediction = { homeScore: number; awayScore: number; points: number }
 
 export default async function PrediccionesPage() {
@@ -15,6 +18,7 @@ export default async function PrediccionesPage() {
   const userId = session?.user?.id
   const now = new Date()
   const emblem = await getWCEmblem()
+  const locked = now >= TOURNAMENT_START
 
   const fixtures = await prisma.fixture.findMany({
     orderBy: [{ group: "asc" }, { matchday: "asc" }, { matchDate: "asc" }],
@@ -29,6 +33,13 @@ export default async function PrediccionesPage() {
     for (const p of preds) predMap.set(p.fixtureId, p)
   }
 
+  // Load existing tournament picks for this user
+  const initialPicks: Record<string, string> = {}
+  if (userId) {
+    const picks = await prisma.tournamentPick.findMany({ where: { userId } })
+    for (const p of picks) initialPicks[p.category] = p.value
+  }
+
   const grouped = new Map<string, typeof fixtures>()
   for (const f of fixtures) {
     const key = f.group ?? "Sin grupo"
@@ -37,7 +48,6 @@ export default async function PrediccionesPage() {
   }
   const sortedGroups = Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b))
 
-  // Equipos presentes en fixtures, o todos si aún no hay partidos cargados
   const fixtureTeams = [...new Set(fixtures.flatMap((f) => [f.homeTeam, f.awayTeam]))].sort(
     (a, b) => a.localeCompare(b),
   )
@@ -45,7 +55,6 @@ export default async function PrediccionesPage() {
 
   return (
     <div className="space-y-8">
-      {/* Fase de Grupos */}
       <div>
         <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">Predicciones</h1>
         <p className="mb-6 text-sm text-gray-400 dark:text-neutral-500">
@@ -73,8 +82,7 @@ export default async function PrediccionesPage() {
         )}
       </div>
 
-      {/* Predicciones del torneo */}
-      <TournamentPredictions teams={teams} />
+      <TournamentPredictions teams={teams} initialPicks={initialPicks} locked={locked} />
     </div>
   )
 }
