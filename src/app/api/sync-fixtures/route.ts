@@ -11,6 +11,10 @@ const API_TO_LOCAL: Record<string, string> = {
   "IR Iran": "Iran",
   Türkiye: "Turkey",
   "Bosnia-Herzegovina": "Bosnia",
+  "Cabo Verde": "Cape Verde",
+  "Cape Verde Islands": "Cape Verde",
+  Czechia: "Czech Republic",
+  "Congo DR": "DR Congo",
 }
 
 function localName(apiName: string): string {

@@ -88,6 +88,7 @@ const COUNTRY_CODES: Record<string, string> = {
   Gabon: "GA",
   "Cape Verde": "CV",
   "Cabo Verde": "CV",
+  "Cape Verde Islands": "CV",
 
   // AFC
   Japan: "JP",

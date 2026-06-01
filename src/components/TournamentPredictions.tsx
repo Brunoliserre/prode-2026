@@ -12,15 +12,15 @@ interface Props {
 }
 
 const CATEGORIES = [
-  { key: "CHAMPION",   label: "Campeón del Mundo", icon: "🏆", points: 15, type: "team" },
-  { key: "RUNNER_UP",  label: "Subcampeón",         icon: "🥈", points: 8,  type: "team" },
-  { key: "MVP",        label: "MVP del Mundial",    icon: "🌟", points: 5,  type: "player" },
-  { key: "PICHICHI",   label: "Pichichi",           icon: "👟", points: 5,  type: "player" },
-  { key: "REVELATION", label: "Equipo Revelación",  icon: "⭐", points: 3,  type: "team" },
-  { key: "FAIR_PLAY",  label: "Premio Fair Play",   icon: "🤝", points: 3,  type: "team" },
-  { key: "RUSTICO",    label: "Premio Rústico",     icon: "💥", points: 3,  type: "team" },
-  { key: "DESASTROZA", label: "Premio Desastroza",  icon: "🎯", points: 3,  type: "team" },
-  { key: "DECEPCION",  label: "Premio Decepción",   icon: "😞", points: 3,  type: "team" },
+  { key: "CHAMPION",   label: "Campeón del Mundo", icon: "🏆", points: 15, type: "team",   sublabel: undefined },
+  { key: "RUNNER_UP",  label: "Subcampeón",         icon: "🥈", points: 8,  type: "team",   sublabel: undefined },
+  { key: "MVP",        label: "MVP del Mundial",    icon: "🌟", points: 5,  type: "player", sublabel: "MVP del torneo elegido por la FIFA" },
+  { key: "PICHICHI",   label: "Pichichi",           icon: "👟", points: 5,  type: "player", sublabel: "Máximo goleador del torneo" },
+  { key: "REVELATION", label: "Equipo Revelación",  icon: "⭐", points: 3,  type: "team",   sublabel: "Selección que nunca superó los Octavos y llega a Cuartos o más" },
+  { key: "RUSTICO",    label: "Premio Rústico",     icon: "💥", points: 3,  type: "team",   sublabel: "Equipo con mayor puntaje de tarjetas (Amarilla = 1, Roja = 3)" },
+  { key: "FAIR_PLAY",  label: "Premio Fair Play",   icon: "🤝", points: 3,  type: "team",   sublabel: "Equipo con menor puntaje de tarjetas al finalizar el Mundial" },
+  { key: "DESASTROZO", label: "Premio Desastrozo",  icon: "🎯", points: 3,  type: "team",   sublabel: "Selección más goleada del torneo" },
+  { key: "DECEPCION",  label: "Premio Decepción",   icon: "😞", points: 3,  type: "team",   sublabel: "Selección TOP 10 FIFA que no supera la Fase de Grupos" },
 ] as const
 
 type CategoryKey = (typeof CATEGORIES)[number]["key"]
@@ -70,9 +70,9 @@ export function TournamentPredictions({ teams, initialPicks, locked }: Props) {
     MVP:        initialPicks.MVP        ?? "",
     PICHICHI:   initialPicks.PICHICHI   ?? "",
     REVELATION: initialPicks.REVELATION ?? "",
-    FAIR_PLAY:  initialPicks.FAIR_PLAY  ?? "",
     RUSTICO:    initialPicks.RUSTICO    ?? "",
-    DESASTROZA: initialPicks.DESASTROZA ?? "",
+    FAIR_PLAY:  initialPicks.FAIR_PLAY  ?? "",
+    DESASTROZO: initialPicks.DESASTROZO ?? "",
     DECEPCION:  initialPicks.DECEPCION  ?? "",
   }))
 
@@ -117,8 +117,13 @@ export function TournamentPredictions({ teams, initialPicks, locked }: Props) {
           <div key={cat.key} className="flex items-center gap-4 px-5 py-4">
             <span className="w-7 shrink-0 text-center text-xl">{cat.icon}</span>
             <div className="flex-1 min-w-0">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-gray-800 dark:text-neutral-100">{cat.label}</span>
+              <div className="mb-2 flex items-start justify-between gap-2">
+                <div>
+                  <span className="text-sm font-medium text-gray-800 dark:text-neutral-100">{cat.label}</span>
+                  {cat.sublabel && (
+                    <p className="mt-0.5 text-xs text-gray-400 dark:text-neutral-500">{cat.sublabel}</p>
+                  )}
+                </div>
                 <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
                   +{cat.points}
                 </span>
