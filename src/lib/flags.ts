@@ -12,6 +12,8 @@ const COUNTRY_CODES: Record<string, string> = {
   Cuba: "CU",
   Haiti: "HT",
   "Trinidad and Tobago": "TT",
+  Curaçao: "CW",
+  Curacao: "CW",
 
   // CONMEBOL
   Argentina: "AR",
@@ -42,6 +44,7 @@ const COUNTRY_CODES: Record<string, string> = {
   Serbia: "RS",
   Romania: "RO",
   "Czech Republic": "CZ",
+  Czechia: "CZ",
   Hungary: "HU",
   Scotland: "GB",
   Wales: "GB",
@@ -74,6 +77,8 @@ const COUNTRY_CODES: Record<string, string> = {
   "South Africa": "ZA",
   Mali: "ML",
   "DR Congo": "CD",
+  "Congo DR": "CD",
+  "Congo, DR": "CD",
   Tanzania: "TZ",
   Zambia: "ZM",
   Angola: "AO",
@@ -82,6 +87,7 @@ const COUNTRY_CODES: Record<string, string> = {
   "Burkina Faso": "BF",
   Gabon: "GA",
   "Cape Verde": "CV",
+  "Cabo Verde": "CV",
 
   // AFC
   Japan: "JP",
