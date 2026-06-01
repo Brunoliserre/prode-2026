@@ -37,7 +37,11 @@ function TeamFlag({ team }: { team: string }) {
   if (!code) return null
   const Flag = Flags[code as keyof typeof Flags]
   if (!Flag) return null
-  return <Flag className="inline-block h-4 w-6 shrink-0 rounded-sm" />
+  return (
+    <span className="shrink-0">
+      <Flag className="block h-4 w-6 rounded-sm" />
+    </span>
+  )
 }
 
 const inputCls =
@@ -97,10 +101,10 @@ export function GroupCard({ group, matches, predMap, userId, now, emblemUrl }: G
             const canPredict = !!userId && !started
 
             return (
-              <div key={fixture.id} className="flex items-center gap-2 border-b border-gray-100 px-3 py-2.5 last:border-0 dark:border-white/5">
+              <div key={fixture.id} className="flex items-center gap-1 border-b border-gray-100 px-2 py-2.5 last:border-0 sm:gap-2 sm:px-3 dark:border-white/5">
 
                 {/* Status */}
-                <div className="w-11 shrink-0">
+                <div className="w-9 shrink-0 sm:w-11">
                   <StatusBadge started={started} finished={finished} matchday={fixture.matchday} />
                 </div>
 
@@ -126,7 +130,7 @@ export function GroupCard({ group, matches, predMap, userId, now, emblemUrl }: G
                 </div>
 
                 {/* Center */}
-                <div className="w-14 shrink-0 text-center">
+                <div className="w-10 shrink-0 text-center sm:w-14">
                   {finished ? (
                     <span className="text-sm font-bold text-gray-900 dark:text-white">{fixture.homeScore}–{fixture.awayScore}</span>
                   ) : started ? (
@@ -158,7 +162,7 @@ export function GroupCard({ group, matches, predMap, userId, now, emblemUrl }: G
                 </div>
 
                 {/* Right: save btn / time / pred badge */}
-                <div className="w-16 shrink-0 flex items-center justify-end gap-1">
+                <div className="w-12 shrink-0 flex items-center justify-end gap-1 sm:w-16">
                   {canPredict ? (
                     <>
                       <button

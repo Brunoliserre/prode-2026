@@ -5,6 +5,18 @@ import { auth } from "./auth"
 import { prisma } from "./prisma"
 import { calcPoints, PICK_POINTS } from "./utils"
 
+// ── Admin: users ───────────────────────────────────────────────────────────────
+
+export async function deleteUser(userId: string) {
+  const session = await auth()
+  if (session?.user?.email !== process.env.ADMIN_EMAIL) throw new Error("No autorizado")
+  if (session.user.id === userId) throw new Error("No podés eliminarte a vos mismo")
+
+  await prisma.user.delete({ where: { id: userId } })
+  revalidatePath("/admin")
+  revalidatePath("/")
+}
+
 // ── Match Predictions ──────────────────────────────────────────────────────────
 
 export async function submitPrediction(

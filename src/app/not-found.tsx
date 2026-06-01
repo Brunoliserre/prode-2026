@@ -1,15 +1,18 @@
 import Link from "next/link"
+import Image from "next/image"
 
 export default function NotFound() {
   return (
-    <div
-      className="relative -mx-4 -my-8 flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-hidden text-center"
-      style={{
-        backgroundImage: "url('/404-bg.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center top",
-      }}
-    >
+    <div className="relative -mx-4 -my-8 flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-hidden text-center">
+      {/* Background image — priority prevents lazy loading */}
+      <Image
+        src="/404-bg.jpg"
+        alt=""
+        fill
+        priority
+        className="object-cover object-top"
+      />
+
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/65" />
 
