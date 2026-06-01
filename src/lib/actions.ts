@@ -3,20 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { auth } from "./auth"
 import { prisma } from "./prisma"
-import { calcPoints } from "./utils"
-
-// Points awarded per tournament pick category
-export const PICK_POINTS: Record<string, number> = {
-  CHAMPION:   15,
-  RUNNER_UP:  8,
-  MVP:        5,
-  PICHICHI:   5,
-  REVELATION: 3,
-  FAIR_PLAY:  3,
-  RUSTICO:    3,
-  DESASTROZA: 3,
-  DECEPCION:  3,
-}
+import { calcPoints, PICK_POINTS } from "./utils"
 
 // ── Match Predictions ──────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { awardTournamentPoints } from "@/lib/actions"
-import { PICK_POINTS } from "@/lib/actions"
+import { PICK_POINTS } from "@/lib/utils"
 
 const CATEGORIES = [
   { key: "CHAMPION",   label: "Campeón del Mundo", icon: "🏆", points: 15, type: "team" },

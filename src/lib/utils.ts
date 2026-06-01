@@ -22,6 +22,18 @@ export function matchResult(home: number, away: number): "home" | "away" | "draw
   return "draw"
 }
 
+export const PICK_POINTS: Record<string, number> = {
+  CHAMPION:   15,
+  RUNNER_UP:  8,
+  MVP:        5,
+  PICHICHI:   5,
+  REVELATION: 3,
+  FAIR_PLAY:  3,
+  RUSTICO:    3,
+  DESASTROZA: 3,
+  DECEPCION:  3,
+}
+
 const STAGE_POINTS: Record<string, number> = {
   LAST_32:        2,
   LAST_16:        3,
