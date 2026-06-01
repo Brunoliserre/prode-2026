@@ -11,16 +11,23 @@ interface Props {
   locked: boolean
 }
 
+// FIFA TOP 10 — used for champion, runner-up and decepción picks
+const TOP10 = [
+  "France", "Spain", "Argentina", "England",
+  "Portugal", "Brazil", "Netherlands", "Morocco",
+  "Belgium", "Germany",
+]
+
 const CATEGORIES = [
-  { key: "CHAMPION",   label: "Campeón del Mundo", icon: "🏆", points: 15, type: "team",   sublabel: undefined },
-  { key: "RUNNER_UP",  label: "Subcampeón",         icon: "🥈", points: 8,  type: "team",   sublabel: undefined },
-  { key: "MVP",        label: "MVP del Mundial",    icon: "🌟", points: 5,  type: "player", sublabel: "MVP del torneo elegido por la FIFA" },
-  { key: "PICHICHI",   label: "Pichichi",           icon: "👟", points: 5,  type: "player", sublabel: "Máximo goleador del torneo" },
-  { key: "REVELATION", label: "Equipo Revelación",  icon: "⭐", points: 3,  type: "team",   sublabel: "Selección que nunca superó los Octavos y llega a Cuartos o más" },
-  { key: "RUSTICO",    label: "Premio Rústico",     icon: "💥", points: 3,  type: "team",   sublabel: "Equipo con mayor puntaje de tarjetas (Amarilla = 1, Roja = 3)" },
-  { key: "FAIR_PLAY",  label: "Premio Fair Play",   icon: "🤝", points: 3,  type: "team",   sublabel: "Equipo con menor puntaje de tarjetas al finalizar el Mundial" },
-  { key: "DESASTROZO", label: "Premio Desastrozo",  icon: "🎯", points: 3,  type: "team",   sublabel: "Selección más goleada del torneo" },
-  { key: "DECEPCION",  label: "Premio Decepción",   icon: "😞", points: 3,  type: "team",   sublabel: "Selección TOP 10 FIFA que no supera la Fase de Grupos" },
+  { key: "CHAMPION",   label: "Campeón del Mundo", icon: "🏆", points: 15, type: "team",   sublabel: undefined,  teams: "top10" },
+  { key: "RUNNER_UP",  label: "Subcampeón",         icon: "🥈", points: 8,  type: "team",   sublabel: undefined,  teams: "top10" },
+  { key: "MVP",        label: "MVP del Mundial",    icon: "🌟", points: 5,  type: "player", sublabel: "MVP del torneo elegido por la FIFA",                             teams: "all" },
+  { key: "PICHICHI",   label: "Pichichi",           icon: "👟", points: 5,  type: "player", sublabel: "Máximo goleador del torneo",                                     teams: "all" },
+  { key: "REVELATION", label: "Equipo Revelación",  icon: "⭐", points: 3,  type: "team",   sublabel: "Selección que nunca superó los Octavos y llega a Cuartos o más", teams: "all" },
+  { key: "RUSTICO",    label: "Premio Rústico",     icon: "💥", points: 3,  type: "team",   sublabel: "Equipo con mayor puntaje de tarjetas (Amarilla = 1, Roja = 3)",   teams: "all" },
+  { key: "FAIR_PLAY",  label: "Premio Fair Play",   icon: "🤝", points: 3,  type: "team",   sublabel: "Equipo con menor puntaje de tarjetas al finalizar el Mundial",    teams: "all" },
+  { key: "DESASTROZO", label: "Premio Desastrozo",  icon: "🎯", points: 3,  type: "team",   sublabel: "Selección más goleada del torneo",                               teams: "all" },
+  { key: "DECEPCION",  label: "Premio Decepción",   icon: "😞", points: 3,  type: "team",   sublabel: "Selección TOP 10 FIFA que no supera la Fase de Grupos",          teams: "top10" },
 ] as const
 
 type CategoryKey = (typeof CATEGORIES)[number]["key"]
@@ -133,7 +140,7 @@ export function TournamentPredictions({ teams, initialPicks, locked }: Props) {
                   {picks[cat.key] || <span className="italic text-gray-300 dark:text-neutral-600">Sin selección</span>}
                 </p>
               ) : cat.type === "team" ? (
-                <TeamSelect value={picks[cat.key]} onChange={(v) => set(cat.key, v)} teams={teams} />
+                <TeamSelect value={picks[cat.key]} onChange={(v) => set(cat.key, v)} teams={cat.teams === "top10" ? TOP10 : teams} />
               ) : (
                 <PlayerInput
                   value={picks[cat.key]}
