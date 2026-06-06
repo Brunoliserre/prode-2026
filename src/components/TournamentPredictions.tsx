@@ -19,8 +19,8 @@ const TOP10 = [
 ]
 
 const CATEGORIES = [
-  { key: "CHAMPION",   label: "Campeón del Mundo", icon: "🏆", points: 15, type: "team",   sublabel: undefined,  teams: "top10" },
-  { key: "RUNNER_UP",  label: "Subcampeón",         icon: "🥈", points: 8,  type: "team",   sublabel: undefined,  teams: "top10" },
+  { key: "CHAMPION",   label: "Campeón del Mundo", icon: "🏆", points: 8,  type: "team",   sublabel: undefined,  teams: "top10" },
+  { key: "RUNNER_UP",  label: "Subcampeón",         icon: "🥈", points: 5,  type: "team",   sublabel: undefined,  teams: "top10" },
   { key: "MVP",        label: "MVP del Mundial",    icon: "🌟", points: 5,  type: "player", sublabel: "MVP del torneo elegido por la FIFA",                             teams: "all" },
   { key: "PICHICHI",   label: "Pichichi",           icon: "👟", points: 5,  type: "player", sublabel: "Máximo goleador del torneo",                                     teams: "all" },
   { key: "REVELATION", label: "Equipo Revelación",  icon: "⭐", points: 3,  type: "team",   sublabel: "Selección que nunca superó los Octavos y llega a Cuartos o más", teams: "all" },

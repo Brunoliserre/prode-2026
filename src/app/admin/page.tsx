@@ -5,6 +5,7 @@ import { SyncResultsButton } from "@/components/SyncResultsButton"
 import { SyncFixturesButton } from "@/components/SyncFixturesButton"
 import { TournamentAdmin } from "@/components/TournamentAdmin"
 import { DeleteUserForm } from "@/components/DeleteUserForm"
+import { EmailAdmin } from "@/components/EmailAdmin"
 import { ALL_TEAMS } from "@/lib/flags"
 
 export const revalidate = 0
@@ -52,6 +53,13 @@ export default async function AdminPage() {
           Ingresá el ganador de cada categoría para otorgar los puntos automáticamente.
         </p>
         <TournamentAdmin teams={ALL_TEAMS} />
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">
+        <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-white">Enviar correos</h2>
+        <p className="mb-4 text-sm text-gray-400 dark:text-neutral-500">
+          Enviá un mail a todos los usuarios registrados.  </p>
+        <EmailAdmin userCount={users.length} />
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">

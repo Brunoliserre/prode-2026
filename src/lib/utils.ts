@@ -23,14 +23,14 @@ export function matchResult(home: number, away: number): "home" | "away" | "draw
 }
 
 export const PICK_POINTS: Record<string, number> = {
-  CHAMPION:   15,
-  RUNNER_UP:  8,
+  CHAMPION:   8,
+  RUNNER_UP:  5,
   MVP:        5,
   PICHICHI:   5,
   REVELATION: 3,
   FAIR_PLAY:  3,
   RUSTICO:    3,
-  DESASTROZA: 3,
+  DESASTROZO: 3,
   DECEPCION:  3,
 }
 

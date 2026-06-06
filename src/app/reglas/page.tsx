@@ -1,3 +1,5 @@
+import { PICK_POINTS } from "@/lib/utils"
+
 export default function ReglasPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -46,8 +48,8 @@ export default function ReglasPage() {
           Se deben completar antes de que comience el Mundial.
         </p>
         <div className="space-y-3">
-          <RuleRow label="Campeón del Mundo" points={15} />
-          <RuleRow label="Subcampeón" points={8} />
+          <RuleRow label="Campeón del Mundo" points={PICK_POINTS.CHAMPION} />
+          <RuleRow label="Subcampeón" points={PICK_POINTS.RUNNER_UP} />
         </div>
       </Section>
 
@@ -100,12 +102,12 @@ export default function ReglasPage() {
         <div className="space-y-2">
           <SummaryRow label="Fase de Grupos (72 partidos)" value="hasta 144 pts" />
           <SummaryRow label="Fase Eliminatoria (46 partidos)" value="hasta 142 pts" />
-          <SummaryRow label="Campeón + Subcampeón" value="hasta 23 pts" />
+          <SummaryRow label="Campeón + Subcampeón" value="hasta 13 pts" />
           <SummaryRow label="7 Premios Especiales" value="hasta 25 pts" />
           <div className="mt-3 rounded-xl bg-gray-900 px-4 py-3 dark:bg-white/5">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-white dark:text-white">Total máximo posible</span>
-              <span className="font-bold text-emerald-400">334 pts</span>
+              <span className="font-bold text-emerald-400">324 pts</span>
             </div>
           </div>
         </div>

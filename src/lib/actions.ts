@@ -4,6 +4,27 @@ import { revalidatePath } from "next/cache"
 import { auth } from "./auth"
 import { prisma } from "./prisma"
 import { calcPoints, PICK_POINTS } from "./utils"
+import { announcementEmail, reminderEmail, sendBulkEmail } from "./email"
+
+// ── Admin: email ───────────────────────────────────────────────────────────────
+
+export async function sendReminderEmail() {
+  const session = await auth()
+  if (session?.user?.email !== process.env.ADMIN_EMAIL) throw new Error("No autorizado")
+
+  const users = await prisma.user.findMany({ select: { email: true, name: true } })
+  return sendBulkEmail(users, (u) => reminderEmail(u.name))
+}
+
+export async function sendAnnouncementEmail(subject: string, body: string) {
+  const session = await auth()
+  if (session?.user?.email !== process.env.ADMIN_EMAIL) throw new Error("No autorizado")
+
+  if (!subject.trim() || !body.trim()) throw new Error("Asunto y mensaje son obligatorios")
+
+  const users = await prisma.user.findMany({ select: { email: true, name: true } })
+  return sendBulkEmail(users, (u) => announcementEmail(u.name, subject, body))
+}
 
 // ── Admin: users ───────────────────────────────────────────────────────────────
 
@@ -12,6 +33,7 @@ export async function deleteUser(userId: string) {
   if (!session || session.user?.email !== process.env.ADMIN_EMAIL) throw new Error("No autorizado")
   if (session.user?.id === userId) throw new Error("No podés eliminarte a vos mismo")
 
+  await prisma.prediction.deleteMany({ where: { userId } })
   await prisma.user.delete({ where: { id: userId } })
   revalidatePath("/admin")
   revalidatePath("/")
@@ -83,7 +105,7 @@ export async function awardTournamentPoints(category: string, correctValue: stri
     picks.map((p) =>
       prisma.tournamentPick.update({
         where: { id: p.id },
-        data: { points: normalize(p.value) === normalize(correctValue) ? pts : 0 },
+        data: { points: normalize(p.value) === "n/a" ? 0 : normalize(p.value) === normalize(correctValue) ? pts : 0 },
       }),
     ),
   )
