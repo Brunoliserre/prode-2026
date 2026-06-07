@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { ChevronUp, Check, Loader } from "lucide-react"
 import { cn, matchResult } from "@/lib/utils"
@@ -47,8 +47,14 @@ function TeamFlag({ team }: { team: string }) {
 const inputCls =
   "w-10 rounded border border-gray-300 bg-white text-center text-sm font-semibold tabular-nums tracking-tight text-gray-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
 
-export function GroupCard({ group, matches, predMap, userId, now, emblemUrl }: GroupCardProps) {
+export function GroupCard({ group, matches, predMap, userId, now: initialNow, emblemUrl }: GroupCardProps) {
   const [open, setOpen] = useState(true)
+  const [now, setNow] = useState(initialNow)
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30_000)
+    return () => clearInterval(id)
+  }, [])
 
   const [inputs, setInputs] = useState<Record<string, InputState>>(() => {
     const init: Record<string, InputState> = {}
@@ -189,20 +195,24 @@ export function GroupCard({ group, matches, predMap, userId, now, emblemUrl }: G
                   ) : prediction ? (
                     <div className="flex flex-col items-end gap-0.5">
                       <div className="flex items-center gap-1">
+                        {finished && <span className="text-[10px] text-gray-300 dark:text-neutral-600">pred</span>}
                         <span className="font-mono text-xs text-gray-400 dark:text-neutral-500">
                           {prediction.homeScore}–{prediction.awayScore}
                         </span>
                         {finished && <PointsBadge points={prediction.points} />}
                       </div>
                       {finished && (
-                        <span className={cn(
-                          "rounded px-1.5 py-px font-mono text-xs font-semibold",
-                          prediction.points > 0
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                            : "bg-red-500/10 text-red-500 dark:text-red-400",
-                        )}>
-                          {fixture.homeScore}–{fixture.awayScore}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-gray-300 dark:text-neutral-600">real</span>
+                          <span className={cn(
+                            "rounded px-1.5 py-px font-mono text-xs font-semibold",
+                            prediction.points > 0
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                              : "bg-red-500/10 text-red-500 dark:text-red-400",
+                          )}>
+                            {fixture.homeScore}–{fixture.awayScore}
+                          </span>
+                        </div>
                       )}
                     </div>
                   ) : null}
