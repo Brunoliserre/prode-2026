@@ -98,7 +98,7 @@ export function GroupCard({ group, matches, predMap, userId, now, emblemUrl }: G
             const prediction = predMap[fixture.id] ?? null
             const result = finished ? matchResult(fixture.homeScore!, fixture.awayScore!) : null
             const inp = inputs[fixture.id]
-            const canPredict = !!userId && !started
+            const canPredict = !!userId && !started && !finished
 
             return (
               <div key={fixture.id} className="flex items-center gap-1 border-b border-gray-100 px-2 py-2.5 last:border-0 sm:gap-2 sm:px-3 dark:border-white/5">
@@ -162,7 +162,7 @@ export function GroupCard({ group, matches, predMap, userId, now, emblemUrl }: G
                 </div>
 
                 {/* Right: save btn / time / pred badge */}
-                <div className="w-12 shrink-0 flex items-center justify-end gap-1 sm:w-16">
+                <div className="w-16 shrink-0 flex items-center justify-end gap-1 sm:w-20">
                   {canPredict ? (
                     <>
                       <button
@@ -179,7 +179,7 @@ export function GroupCard({ group, matches, predMap, userId, now, emblemUrl }: G
                       </button>
                       {inp.status === "error" && <span className="text-[10px] text-red-500">!</span>}
                     </>
-                  ) : !started ? (
+                  ) : !started && !finished ? (
                     <span className="text-[11px] text-gray-300 dark:text-neutral-600">
                       {new Date(fixture.matchDate).toLocaleTimeString("es-AR", {
                         hour: "2-digit", minute: "2-digit",
@@ -187,11 +187,23 @@ export function GroupCard({ group, matches, predMap, userId, now, emblemUrl }: G
                       })}
                     </span>
                   ) : prediction ? (
-                    <div className="flex items-center gap-1">
-                      <span className="font-mono text-[10px] text-gray-400 dark:text-neutral-500">
-                        {prediction.homeScore}–{prediction.awayScore}
-                      </span>
-                      {finished && <PointsBadge points={prediction.points} />}
+                    <div className="flex flex-col items-end gap-0.5">
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono text-xs text-gray-400 dark:text-neutral-500">
+                          {prediction.homeScore}–{prediction.awayScore}
+                        </span>
+                        {finished && <PointsBadge points={prediction.points} />}
+                      </div>
+                      {finished && (
+                        <span className={cn(
+                          "rounded px-1.5 py-px font-mono text-xs font-semibold",
+                          prediction.points > 0
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                            : "bg-red-500/10 text-red-500 dark:text-red-400",
+                        )}>
+                          {fixture.homeScore}–{fixture.awayScore}
+                        </span>
+                      )}
                     </div>
                   ) : null}
                 </div>
