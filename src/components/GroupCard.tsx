@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ChevronUp, Check, Loader } from "lucide-react"
+import { ChevronUp, Check, Loader, Save } from "lucide-react"
 import { cn, matchResult } from "@/lib/utils"
 import { getCountryCode } from "@/lib/flags"
 import { submitPrediction } from "@/lib/actions"
@@ -30,6 +30,8 @@ interface GroupCardProps {
   userId?: string
   now: Date
   emblemUrl?: string
+  headerLabel?: string
+  dateMode?: boolean
 }
 
 function TeamFlag({ team }: { team: string }) {
@@ -47,7 +49,7 @@ function TeamFlag({ team }: { team: string }) {
 const inputCls =
   "w-10 rounded border border-gray-300 bg-white text-center text-sm font-semibold tabular-nums tracking-tight text-gray-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
 
-export function GroupCard({ group, matches, predMap, userId, now: initialNow, emblemUrl }: GroupCardProps) {
+export function GroupCard({ group, matches, predMap, userId, now: initialNow, emblemUrl, headerLabel, dateMode }: GroupCardProps) {
   const [open, setOpen] = useState(true)
   const [now, setNow] = useState(initialNow)
 
@@ -91,7 +93,7 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
           {emblemUrl
             ? <Image src={emblemUrl} alt="Mundial 2026" width={18} height={18} />
             : <span className="text-sm">⚽</span>}
-          <span className="text-sm font-semibold tracking-wide text-gray-900 dark:text-white">Grupo {group}</span>
+          <span className="text-sm font-semibold tracking-wide text-gray-900 dark:text-white">{headerLabel ?? `Grupo ${group}`}</span>
         </div>
         <ChevronUp className={cn("h-4 w-4 text-gray-300 transition-transform duration-200 dark:text-neutral-600", !open && "rotate-180")} />
       </button>
@@ -111,7 +113,7 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
 
                 {/* Status */}
                 <div className="w-9 shrink-0 sm:w-11">
-                  <StatusBadge started={started} finished={finished} matchday={fixture.matchday} />
+                  <StatusBadge started={started} finished={finished} matchday={fixture.matchday} group={dateMode ? fixture.group : undefined} />
                 </div>
 
                 {/* Home: name + flag + input */}
@@ -171,6 +173,9 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                 <div className="w-16 shrink-0 flex items-center justify-end gap-1 sm:w-20">
                   {canPredict ? (
                     <>
+                      {inp.status === "ok" && (
+                        <Save className="h-3 w-3 shrink-0 text-emerald-500 dark:text-emerald-400" />
+                      )}
                       <button
                         onClick={() => save(fixture.id)}
                         disabled={inp.saving || inp.home === "" || inp.away === ""}
@@ -227,13 +232,18 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
   )
 }
 
-function StatusBadge({ started, finished, matchday }: { started: boolean; finished: boolean; matchday: number | null }) {
+function StatusBadge({ started, finished, matchday, group }: { started: boolean; finished: boolean; matchday: number | null; group?: string | null }) {
   if (finished) return (
     <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-neutral-800 dark:text-neutral-400">Final</span>
   )
   if (started) return (
     <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />Live
+    </span>
+  )
+  if (group) return (
+    <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-400 dark:bg-neutral-800 dark:text-neutral-500">
+      Gr. {group}
     </span>
   )
   return (

@@ -5,7 +5,7 @@ import Image from "next/image"
 import { ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export function GroupsSection({ children, count, emblemUrl }: { children: React.ReactNode; count: number; emblemUrl?: string }) {
+export function GroupsSection({ children, count, emblemUrl, subtitle }: { children: React.ReactNode; count: number; emblemUrl?: string; subtitle?: string }) {
   const [open, setOpen] = useState(true)
 
   return (
@@ -20,7 +20,7 @@ export function GroupsSection({ children, count, emblemUrl }: { children: React.
             : <span className="text-lg">⚽</span>}
           <div className="text-left">
             <p className="font-semibold text-gray-900 dark:text-white">Fase de Grupos</p>
-            <p className="text-xs text-gray-400 dark:text-neutral-500">{count} grupos</p>
+            <p className="text-xs text-gray-400 dark:text-neutral-500">{subtitle ?? `${count} grupos`}</p>
           </div>
         </div>
         <ChevronUp

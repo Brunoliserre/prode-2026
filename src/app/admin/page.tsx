@@ -6,6 +6,7 @@ import { SyncFixturesButton } from "@/components/SyncFixturesButton"
 import { TournamentAdmin } from "@/components/TournamentAdmin"
 import { DeleteUserForm } from "@/components/DeleteUserForm"
 import { EmailAdmin } from "@/components/EmailAdmin"
+import { UserTournamentPicksAdmin } from "@/components/UserTournamentPicksAdmin"
 import { ALL_TEAMS } from "@/lib/flags"
 
 export const revalidate = 0
@@ -21,6 +22,23 @@ export default async function AdminPage() {
     orderBy: { name: "asc" },
     select: { id: true, name: true, email: true, image: true },
   })
+
+  const allPicks = await prisma.tournamentPick.findMany({
+    select: { userId: true, category: true, value: true },
+  })
+
+  const picksByUser = new Map<string, Record<string, string>>()
+  for (const pick of allPicks) {
+    if (!picksByUser.has(pick.userId)) picksByUser.set(pick.userId, {})
+    picksByUser.get(pick.userId)![pick.category] = pick.value
+  }
+
+  const usersWithPicks = users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    image: u.image,
+    picks: picksByUser.get(u.id) ?? {},
+  }))
 
   return (
     <div className="space-y-8">
@@ -53,6 +71,14 @@ export default async function AdminPage() {
           Ingresá el ganador de cada categoría para otorgar los puntos automáticamente.
         </p>
         <TournamentAdmin teams={ALL_TEAMS} />
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">
+        <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-white">Picks de torneo por usuario</h2>
+        <p className="mb-4 text-sm text-gray-400 dark:text-neutral-500">
+          Predicciones de campeón, subcampeón y categorías especiales de cada participante.
+        </p>
+        <UserTournamentPicksAdmin users={usersWithPicks} />
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">

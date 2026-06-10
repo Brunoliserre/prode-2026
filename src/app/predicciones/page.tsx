@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { GroupCard } from "@/components/GroupCard"
-import { GroupsSection } from "@/components/GroupsSection"
+import { FixturesView } from "@/components/FixturesView"
 import { TournamentPredictions } from "@/components/TournamentPredictions"
 import { getWCEmblem } from "@/lib/competition"
 import { ALL_TEAMS } from "@/lib/flags"
@@ -40,14 +39,6 @@ export default async function PrediccionesPage() {
     for (const p of picks) initialPicks[p.category] = p.value
   }
 
-  const grouped = new Map<string, typeof fixtures>()
-  for (const f of fixtures) {
-    const key = f.group ?? "Sin grupo"
-    if (!grouped.has(key)) grouped.set(key, [])
-    grouped.get(key)!.push(f)
-  }
-  const sortedGroups = Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b))
-
   const fixtureTeams = [...new Set(fixtures.flatMap((f) => [f.homeTeam, f.awayTeam]))].sort(
     (a, b) => a.localeCompare(b),
   )
@@ -66,19 +57,13 @@ export default async function PrediccionesPage() {
         {fixtures.length === 0 ? (
           <p className="text-gray-400 dark:text-neutral-500">No hay partidos cargados todavía.</p>
         ) : (
-          <GroupsSection count={sortedGroups.length} emblemUrl={emblem}>
-            {sortedGroups.map(([group, matches]) => (
-              <GroupCard
-                key={group}
-                group={group}
-                matches={matches}
-                predMap={Object.fromEntries(predMap)}
-                userId={userId}
-                emblemUrl={emblem}
-                now={now}
-              />
-            ))}
-          </GroupsSection>
+          <FixturesView
+            fixtures={fixtures}
+            predMap={Object.fromEntries(predMap)}
+            userId={userId}
+            emblemUrl={emblem}
+            now={now}
+          />
         )}
       </div>
 
