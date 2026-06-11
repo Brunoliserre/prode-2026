@@ -2,8 +2,8 @@ name: Sync resultados
 
 on:
   schedule:
-    # 00, 12 y 18 hora argentina (UTC-3) → 03, 15 y 21 UTC
-    - cron: "0 3,15,21 * * *"
+    # cada 2 horas (en punto, UTC)
+    - cron: "0 */2 * * *"
   workflow_dispatch:
 
 jobs:
