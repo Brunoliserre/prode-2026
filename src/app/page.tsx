@@ -1,6 +1,7 @@
 import { auth, signIn } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getWCEmblem } from "@/lib/competition"
+import { cn } from "@/lib/utils"
 import Image from "next/image"
 
 export const revalidate = 60
@@ -79,6 +80,13 @@ async function LeaderboardPage() {
   const rankIcon = (i: number) =>
     i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : String(i + 1)
 
+  // Soft full-row tint for the podium: gold, silver, copper
+  const medalRow = [
+    "bg-amber-100/60 hover:bg-amber-100/80 dark:bg-amber-400/10 dark:hover:bg-amber-400/15",
+    "bg-slate-200/50 hover:bg-slate-200/70 dark:bg-slate-300/10 dark:hover:bg-slate-300/15",
+    "bg-orange-100/50 hover:bg-orange-100/70 dark:bg-orange-400/10 dark:hover:bg-orange-400/15",
+  ]
+
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">Tabla de Posiciones</h1>
@@ -103,7 +111,10 @@ async function LeaderboardPage() {
               {rows.map((row, i) => (
                 <tr
                   key={row.id}
-                  className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50 dark:border-white/5 dark:hover:bg-white/[0.03]"
+                  className={cn(
+                    "border-b border-gray-100 transition-colors last:border-0 dark:border-white/5",
+                    medalRow[i] ?? "hover:bg-gray-50 dark:hover:bg-white/[0.03]",
+                  )}
                 >
                   <td className="px-4 py-3 font-mono text-gray-400 dark:text-neutral-500">{rankIcon(i)}</td>
                   <td className="px-4 py-3">
