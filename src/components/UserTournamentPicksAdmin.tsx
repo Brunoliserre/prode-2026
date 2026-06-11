@@ -1,21 +1,26 @@
+"use client"
+
+import { useState } from "react"
+import { Check, Loader, Pencil, X } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { getCountryCode } from "@/lib/flags"
+import { adminSaveUserPicks } from "@/lib/actions"
+import { TOP10 } from "./TournamentPredictions"
 import * as Flags from "country-flag-icons/react/3x2"
 
 const CATEGORIES = [
-  { key: "CHAMPION",   label: "Campeón",     icon: "🏆" },
-  { key: "RUNNER_UP",  label: "Subcampeón",  icon: "🥈" },
-  { key: "MVP",        label: "MVP",         icon: "🌟" },
-  { key: "PICHICHI",   label: "Pichichi",    icon: "👟" },
-  { key: "REVELATION", label: "Revelación",  icon: "⭐" },
-  { key: "RUSTICO",    label: "Rústico",     icon: "💥" },
-  { key: "FAIR_PLAY",  label: "Fair Play",   icon: "🤝" },
-  { key: "DESASTROZO", label: "Desastrozo",  icon: "🎯" },
-  { key: "DECEPCION",  label: "Decepción",   icon: "😞" },
+  { key: "CHAMPION",   label: "Campeón",     icon: "🏆", type: "team",   teams: "top10" },
+  { key: "RUNNER_UP",  label: "Subcampeón",  icon: "🥈", type: "team",   teams: "top10" },
+  { key: "MVP",        label: "MVP",         icon: "🌟", type: "player", teams: "all" },
+  { key: "PICHICHI",   label: "Pichichi",    icon: "👟", type: "player", teams: "all" },
+  { key: "REVELATION", label: "Revelación",  icon: "⭐", type: "team",   teams: "all" },
+  { key: "RUSTICO",    label: "Rústico",     icon: "💥", type: "team",   teams: "all" },
+  { key: "FAIR_PLAY",  label: "Fair Play",   icon: "🤝", type: "team",   teams: "all" },
+  { key: "DESASTROZO", label: "Desastrozo",  icon: "🎯", type: "team",   teams: "all" },
+  { key: "DECEPCION",  label: "Decepción",   icon: "😞", type: "team",   teams: "top10" },
 ] as const
 
 const PLAYER_CATEGORIES = new Set(["MVP", "PICHICHI"])
-
-type CategoryKey = (typeof CATEGORIES)[number]["key"]
 
 interface UserRow {
   id: string
@@ -45,9 +50,59 @@ function PickCell({ category, value }: { category: string; value: string | undef
   )
 }
 
-export function UserTournamentPicksAdmin({ users }: { users: UserRow[] }) {
-  const filled = users.filter((u) => Object.keys(u.picks).length > 0)
-  const empty = users.filter((u) => Object.keys(u.picks).length === 0)
+const editCls =
+  "rounded border border-gray-200 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+
+export function UserTournamentPicksAdmin({ users, teams }: { users: UserRow[]; teams: string[] }) {
+  const [rows, setRows] = useState(users)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draft, setDraft] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
+  const [errorId, setErrorId] = useState<string | null>(null)
+
+  function startEdit(user: UserRow) {
+    setEditingId(user.id)
+    setErrorId(null)
+    const d: Record<string, string> = {}
+    for (const cat of CATEGORIES) d[cat.key] = user.picks[cat.key] ?? ""
+    setDraft(d)
+  }
+
+  async function saveEdit(userId: string) {
+    setSaving(true)
+    setErrorId(null)
+    try {
+      await adminSaveUserPicks(userId, draft)
+      setRows((prev) =>
+        prev.map((u) =>
+          u.id === userId
+            ? {
+                ...u,
+                picks: Object.fromEntries(
+                  Object.entries(draft).filter(([, v]) => v.trim() !== ""),
+                ),
+              }
+            : u,
+        ),
+      )
+      setEditingId(null)
+    } catch {
+      setErrorId(userId)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Options for a team select: the configured list, plus the current value if
+  // it's something else (e.g. "N/A") so it doesn't get silently dropped
+  function teamOptions(cat: (typeof CATEGORIES)[number], current: string): string[] {
+    const base = cat.teams === "top10" ? TOP10 : teams
+    return current && !base.includes(current) ? [current, ...base] : [...base]
+  }
+
+  const filled = rows.filter((u) => Object.keys(u.picks).length > 0)
+  const empty = rows.filter((u) => Object.keys(u.picks).length === 0)
+  const ordered = [...filled, ...empty]
 
   return (
     <div className="overflow-x-auto">
@@ -67,39 +122,108 @@ export function UserTournamentPicksAdmin({ users }: { users: UserRow[] }) {
                 <span className="block text-xs">{cat.label}</span>
               </th>
             ))}
+            <th className="px-2 py-2" />
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50 dark:divide-white/5">
-          {filled.map((user) => (
-            <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-              <td className="sticky left-0 z-10 bg-white py-2.5 pr-4 dark:bg-neutral-900">
-                <div className="flex items-center gap-2">
-                  {user.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.image} alt="" className="h-6 w-6 rounded-full" />
-                  ) : (
-                    <div className="h-6 w-6 rounded-full bg-gray-200 dark:bg-neutral-700" />
-                  )}
-                  <span className="whitespace-nowrap font-medium text-gray-800 dark:text-neutral-100">
-                    {user.name ?? "Sin nombre"}
-                  </span>
-                </div>
-              </td>
-              {CATEGORIES.map((cat) => (
-                <td key={cat.key} className="whitespace-nowrap px-3 py-2.5 text-center text-xs">
-                  <PickCell category={cat.key} value={user.picks[cat.key]} />
+          {ordered.map((user) => {
+            const editing = editingId === user.id
+            const hasPicks = Object.keys(user.picks).length > 0
+
+            return (
+              <tr
+                key={user.id}
+                className={cn(
+                  "hover:bg-gray-50 dark:hover:bg-white/[0.02]",
+                  editing && "bg-blue-50/40 hover:bg-blue-50/40 dark:bg-blue-500/5 dark:hover:bg-blue-500/5",
+                )}
+              >
+                <td className="sticky left-0 z-10 bg-white py-2.5 pr-4 dark:bg-neutral-900">
+                  <div className="flex items-center gap-2">
+                    {user.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.image} alt="" className="h-6 w-6 rounded-full" />
+                    ) : (
+                      <div className="h-6 w-6 rounded-full bg-gray-200 dark:bg-neutral-700" />
+                    )}
+                    <span className="whitespace-nowrap font-medium text-gray-800 dark:text-neutral-100">
+                      {user.name ?? "Sin nombre"}
+                    </span>
+                    {!hasPicks && !editing && (
+                      <span className="rounded-full bg-amber-100 px-1.5 py-px text-[10px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                        sin picks
+                      </span>
+                    )}
+                  </div>
                 </td>
-              ))}
-            </tr>
-          ))}
+
+                {CATEGORIES.map((cat) => (
+                  <td key={cat.key} className="whitespace-nowrap px-3 py-2.5 text-center text-xs">
+                    {editing ? (
+                      cat.type === "player" ? (
+                        <input
+                          type="text"
+                          value={draft[cat.key]}
+                          onChange={(e) => setDraft((d) => ({ ...d, [cat.key]: e.target.value }))}
+                          placeholder="—"
+                          className={cn(editCls, "w-24")}
+                        />
+                      ) : (
+                        <select
+                          value={draft[cat.key]}
+                          onChange={(e) => setDraft((d) => ({ ...d, [cat.key]: e.target.value }))}
+                          className={cn(editCls, "w-32")}
+                        >
+                          <option value="">—</option>
+                          {teamOptions(cat, draft[cat.key]).map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      )
+                    ) : (
+                      <PickCell category={cat.key} value={user.picks[cat.key]} />
+                    )}
+                  </td>
+                ))}
+
+                <td className="whitespace-nowrap px-2 py-2.5 text-right">
+                  {editing ? (
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => saveEdit(user.id)}
+                        disabled={saving}
+                        title="Guardar"
+                        className="flex h-6 w-7 items-center justify-center rounded bg-emerald-100 text-emerald-600 transition-colors hover:bg-emerald-200 disabled:opacity-40 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
+                      >
+                        {saving ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        disabled={saving}
+                        title="Cancelar"
+                        className="flex h-6 w-7 items-center justify-center rounded bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 disabled:opacity-40 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => startEdit(user)}
+                      title="Editar picks"
+                      className="flex h-6 w-7 items-center justify-center rounded text-gray-300 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-neutral-600 dark:hover:bg-white/5 dark:hover:text-neutral-300"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  {errorId === user.id && (
+                    <p className="mt-1 text-[10px] text-red-500">Error al guardar</p>
+                  )}
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
-
-      {empty.length > 0 && (
-        <p className="mt-3 text-xs text-gray-400 dark:text-neutral-600">
-          Sin predicciones: {empty.map((u) => u.name ?? u.id).join(", ")}
-        </p>
-      )}
     </div>
   )
 }

@@ -77,8 +77,9 @@ export default async function AdminPage() {
         <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-white">Picks de torneo por usuario</h2>
         <p className="mb-4 text-sm text-gray-400 dark:text-neutral-500">
           Predicciones de campeón, subcampeón y categorías especiales de cada participante.
+          Usá el lápiz para cargar o corregir los picks de quien se olvidó de completarlos.
         </p>
-        <UserTournamentPicksAdmin users={usersWithPicks} />
+        <UserTournamentPicksAdmin users={usersWithPicks} teams={ALL_TEAMS} />
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">

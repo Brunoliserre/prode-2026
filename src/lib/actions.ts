@@ -121,6 +121,36 @@ export async function saveTournamentPicks(picks: Record<string, string>) {
   revalidatePath("/profile")
 }
 
+// Admin: edit any user's tournament picks (for users who forgot to fill them).
+// Empty values delete the pick.
+export async function adminSaveUserPicks(userId: string, picks: Record<string, string>) {
+  const session = await auth()
+  if (session?.user?.email !== process.env.ADMIN_EMAIL) throw new Error("No autorizado")
+
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) throw new Error("Usuario no encontrado")
+
+  const validCategories = Object.keys(PICK_POINTS)
+
+  await Promise.all(
+    Object.entries(picks)
+      .filter(([cat]) => validCategories.includes(cat))
+      .map(([category, value]) =>
+        value.trim()
+          ? prisma.tournamentPick.upsert({
+              where: { userId_category: { userId, category } },
+              update: { value: value.trim(), points: 0 },
+              create: { userId, category, value: value.trim() },
+            })
+          : prisma.tournamentPick.deleteMany({ where: { userId, category } }),
+      ),
+  )
+
+  revalidatePath("/admin")
+  revalidatePath("/")
+  revalidatePath("/predicciones")
+}
+
 // Admin: award points to all users who picked the correct value for a category
 export async function awardTournamentPoints(category: string, correctValue: string) {
   const session = await auth()

@@ -12,7 +12,7 @@ interface Props {
 }
 
 // FIFA TOP 10 — used for champion, runner-up and decepción picks
-const TOP10 = [
+export const TOP10 = [
   "France", "Spain", "Argentina", "England",
   "Portugal", "Brazil", "Netherlands", "Morocco",
   "Belgium", "Germany",
