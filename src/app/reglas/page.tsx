@@ -85,7 +85,7 @@ export default function ReglasPage() {
             points={3}
           />
           <RuleRow
-            label="Premio Desastroza"
+            label="Premio Desastroso"
             sublabel="Selección más goleada del torneo"
             points={3}
           />

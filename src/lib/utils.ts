@@ -30,7 +30,7 @@ export const PICK_POINTS: Record<string, number> = {
   REVELATION: 3,
   FAIR_PLAY:  3,
   RUSTICO:    3,
-  DESASTROZO: 3,
+  DESASTROSO: 3,
   DECEPCION:  3,
 }
 

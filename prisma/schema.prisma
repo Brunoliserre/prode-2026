@@ -80,7 +80,7 @@ model Prediction {
   @@unique([userId, fixtureId])
 }
 
-// CHAMPION | RUNNER_UP | MVP | PICHICHI | REVELATION | FAIR_PLAY | RUSTICO | DESASTROZA | DECEPCION
+// CHAMPION | RUNNER_UP | MVP | PICHICHI | REVELATION | FAIR_PLAY | RUSTICO | DESASTROSO | DECEPCION
 model TournamentPick {
   id       String @id @default(cuid())
   userId   String

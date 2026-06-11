@@ -16,7 +16,7 @@ const CATEGORIES = [
   { key: "REVELATION", label: "Revelación",  icon: "⭐", type: "team",   teams: "all" },
   { key: "RUSTICO",    label: "Rústico",     icon: "💥", type: "team",   teams: "all" },
   { key: "FAIR_PLAY",  label: "Fair Play",   icon: "🤝", type: "team",   teams: "all" },
-  { key: "DESASTROZO", label: "Desastrozo",  icon: "🎯", type: "team",   teams: "all" },
+  { key: "DESASTROSO", label: "Desastroso",  icon: "🎯", type: "team",   teams: "all" },
   { key: "DECEPCION",  label: "Decepción",   icon: "😞", type: "team",   teams: "top10" },
 ] as const
 

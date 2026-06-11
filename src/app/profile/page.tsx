@@ -13,7 +13,7 @@ const PICK_LABELS: Record<string, { label: string; icon: string; points: number 
   REVELATION: { label: "Equipo Revelación", icon: "⭐", points: 3  },
   FAIR_PLAY:  { label: "Premio Fair Play",  icon: "🤝", points: 3  },
   RUSTICO:    { label: "Premio Rústico",    icon: "💥", points: 3  },
-  DESASTROZO: { label: "Premio Desastrozo", icon: "🎯", points: 3  },
+  DESASTROSO: { label: "Premio Desastroso", icon: "🎯", points: 3  },
   DECEPCION:  { label: "Premio Decepción",  icon: "😞", points: 3  },
 }
 

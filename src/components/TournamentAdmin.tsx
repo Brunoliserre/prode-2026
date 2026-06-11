@@ -12,7 +12,7 @@ const CATEGORIES = [
   { key: "REVELATION", label: "Equipo Revelación",  icon: "⭐", type: "team",   allowNA: false },
   { key: "FAIR_PLAY",  label: "Premio Fair Play",   icon: "🤝", type: "team",   allowNA: false },
   { key: "RUSTICO",    label: "Premio Rústico",     icon: "💥", type: "team",   allowNA: false },
-  { key: "DESASTROZA", label: "Premio Desastroza",  icon: "🎯", type: "team",   allowNA: false },
+  { key: "DESASTROSO", label: "Premio Desastroso",  icon: "🎯", type: "team",   allowNA: false },
   { key: "DECEPCION",  label: "Premio Decepción",   icon: "😞", type: "team",   allowNA: true  },
 ]
 

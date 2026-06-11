@@ -26,7 +26,7 @@ const CATEGORIES = [
   { key: "REVELATION", label: "Equipo Revelación",  icon: "⭐", points: 3,  type: "team",   sublabel: "Selección que nunca superó los Octavos y llega a Cuartos o más", teams: "all" },
   { key: "RUSTICO",    label: "Premio Rústico",     icon: "💥", points: 3,  type: "team",   sublabel: "Equipo con mayor puntaje de tarjetas (Amarilla = 1, Roja = 3)",   teams: "all" },
   { key: "FAIR_PLAY",  label: "Premio Fair Play",   icon: "🤝", points: 3,  type: "team",   sublabel: "Equipo con menor puntaje de tarjetas al finalizar el Mundial",    teams: "all" },
-  { key: "DESASTROZO", label: "Premio Desastrozo",  icon: "🎯", points: 3,  type: "team",   sublabel: "Selección más goleada del torneo",                               teams: "all" },
+  { key: "DESASTROSO", label: "Premio Desastroso",  icon: "🎯", points: 3,  type: "team",   sublabel: "Selección más goleada del torneo",                               teams: "all" },
   { key: "DECEPCION",  label: "Premio Decepción",   icon: "😞", points: 3,  type: "team",   sublabel: "Selección TOP 10 FIFA que no supera la Fase de Grupos",          teams: "top10" },
 ] as const
 
@@ -79,7 +79,7 @@ export function TournamentPredictions({ teams, initialPicks, locked }: Props) {
     REVELATION: initialPicks.REVELATION ?? "",
     RUSTICO:    initialPicks.RUSTICO    ?? "",
     FAIR_PLAY:  initialPicks.FAIR_PLAY  ?? "",
-    DESASTROZO: initialPicks.DESASTROZO ?? "",
+    DESASTROSO: initialPicks.DESASTROSO ?? "",
     DECEPCION:  initialPicks.DECEPCION  ?? "",
   }))
 
