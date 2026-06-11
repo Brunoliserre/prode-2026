@@ -4,11 +4,9 @@ import { FixturesView } from "@/components/FixturesView"
 import { TournamentPredictions } from "@/components/TournamentPredictions"
 import { getWCEmblem } from "@/lib/competition"
 import { ALL_TEAMS } from "@/lib/flags"
+import { TOURNAMENT_START } from "@/lib/utils"
 
 export const revalidate = 0
-
-// World Cup 2026 start date — picks lock after this
-const TOURNAMENT_START = new Date("2026-06-11T00:00:00-05:00")
 
 type UserPrediction = { homeScore: number; awayScore: number; points: number }
 

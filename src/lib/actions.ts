@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { auth } from "./auth"
 import { prisma } from "./prisma"
-import { calcPoints, PICK_POINTS } from "./utils"
+import { calcPoints, PICK_POINTS, TOURNAMENT_START } from "./utils"
 import { announcementEmail, reminderEmail, sendBulkEmail } from "./email"
 
 // ── Admin: email ───────────────────────────────────────────────────────────────
@@ -101,6 +101,9 @@ export async function getFixturePredictions(fixtureId: string) {
 export async function saveTournamentPicks(picks: Record<string, string>) {
   const session = await auth()
   if (!session?.user?.id) throw new Error("No autenticado")
+  if (new Date() >= TOURNAMENT_START) {
+    throw new Error("Las predicciones del torneo están cerradas: el Mundial ya comenzó")
+  }
 
   const validCategories = Object.keys(PICK_POINTS)
 

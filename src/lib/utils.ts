@@ -22,6 +22,9 @@ export function matchResult(home: number, away: number): "home" | "away" | "draw
   return "draw"
 }
 
+// World Cup 2026 start date — tournament picks lock after this
+export const TOURNAMENT_START = new Date("2026-06-11T00:00:00-05:00")
+
 export const PICK_POINTS: Record<string, number> = {
   CHAMPION:   8,
   RUNNER_UP:  5,
