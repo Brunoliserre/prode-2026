@@ -4,7 +4,13 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { calcPoints } from "@/lib/utils"
 
-// Maps football-data.org team names → local seed names
+// ESPN scoreboard: sin API key y publica los resultados apenas termina el
+// partido (football-data.org free tier los demora — el inaugural seguía
+// sin score 30' después del final)
+const ESPN_URL =
+  "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=300"
+
+// Maps API team names → local seed names
 const API_TO_LOCAL: Record<string, string> = {
   "United States": "USA",
   "Côte d'Ivoire": "Ivory Coast",
@@ -22,11 +28,28 @@ function normalize(name: string): string {
   return (API_TO_LOCAL[name] ?? name).toLowerCase()
 }
 
+function sameUtcDay(a: Date, b: Date): boolean {
+  return Math.abs(a.getTime() - b.getTime()) < 24 * 60 * 60 * 1000
+}
+
+type EspnEvent = {
+  date: string
+  status: { type: { completed: boolean; name: string } }
+  competitions: {
+    competitors: {
+      homeAway: "home" | "away"
+      score?: string
+      team: { displayName: string }
+    }[]
+  }[]
+}
+
 export async function GET(req: NextRequest) {
-  // Accept either an admin session or the Vercel cron secret
+  // Accept either an admin session or the cron secret
   const cronSecret = process.env.CRON_SECRET
   const isCron =
     cronSecret != null &&
+    cronSecret !== "" &&
     req.headers.get("authorization") === `Bearer ${cronSecret}`
 
   if (!isCron) {
@@ -36,57 +59,65 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const apiKey = process.env.FOOTBALL_DATA_API_KEY
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "FOOTBALL_DATA_API_KEY no configurada" },
-      { status: 500 },
-    )
-  }
-
-  const apiRes = await fetch(
-    "https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED&season=2026",
-    {
-      headers: { "X-Auth-Token": apiKey },
-      cache: "no-store",
-    },
-  )
+  const apiRes = await fetch(ESPN_URL, { cache: "no-store" })
 
   if (!apiRes.ok) {
     const text = await apiRes.text()
     return NextResponse.json(
-      { error: `Error de la API externa (${apiRes.status}): ${text}` },
+      { error: `Error de la API externa (${apiRes.status}): ${text.slice(0, 200)}` },
       { status: 502 },
     )
   }
 
   const data = await apiRes.json()
-  const matches: unknown[] = data.matches ?? []
+  const events: EspnEvent[] = data.events ?? []
 
-  const pending = await prisma.fixture.findMany({ where: { homeScore: null } })
+  const fixtures = await prisma.fixture.findMany()
 
   let updated = 0
+  let finished = 0
+  const unmatched: string[] = []
 
-  for (const match of matches) {
-    const m = match as {
-      homeTeam: { name: string }
-      awayTeam: { name: string }
-      score: { fullTime: { home: number | null; away: number | null } }
-    }
+  for (const ev of events) {
+    if (!ev.status?.type?.completed) continue
 
-    const homeScore = m.score?.fullTime?.home
-    const awayScore = m.score?.fullTime?.away
-    if (homeScore == null || awayScore == null) continue
+    const competitors = ev.competitions?.[0]?.competitors ?? []
+    const home = competitors.find((c) => c.homeAway === "home")
+    const away = competitors.find((c) => c.homeAway === "away")
+    if (!home || !away) continue
 
-    const homeNorm = normalize(m.homeTeam.name)
-    const awayNorm = normalize(m.awayTeam.name)
+    let homeScore = Number(home.score)
+    let awayScore = Number(away.score)
+    if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) continue
 
-    const fixture = pending.find(
+    finished++
+
+    const evDate = new Date(ev.date)
+    const homeNorm = normalize(home.team.displayName)
+    const awayNorm = normalize(away.team.displayName)
+
+    let fixture = fixtures.find(
       (f) =>
         normalize(f.homeTeam) === homeNorm &&
-        normalize(f.awayTeam) === awayNorm,
+        normalize(f.awayTeam) === awayNorm &&
+        sameUtcDay(new Date(f.matchDate), evDate),
     )
-    if (!fixture) continue
+    // Same pairing but home/away swapped in the DB
+    if (!fixture) {
+      fixture = fixtures.find(
+        (f) =>
+          normalize(f.homeTeam) === awayNorm &&
+          normalize(f.awayTeam) === homeNorm &&
+          sameUtcDay(new Date(f.matchDate), evDate),
+      )
+      if (fixture) [homeScore, awayScore] = [awayScore, homeScore]
+    }
+
+    if (!fixture) {
+      unmatched.push(`${home.team.displayName} vs ${away.team.displayName}`)
+      continue
+    }
+    if (fixture.homeScore === homeScore && fixture.awayScore === awayScore) continue
 
     await prisma.fixture.update({
       where: { id: fixture.id },
@@ -102,7 +133,7 @@ export async function GET(req: NextRequest) {
         prisma.prediction.update({
           where: { id: p.id },
           data: {
-            points: calcPoints(homeScore, awayScore, p.homeScore, p.awayScore),
+            points: calcPoints(homeScore, awayScore, p.homeScore, p.awayScore, fixture.stage),
           },
         }),
       ),
@@ -115,7 +146,8 @@ export async function GET(req: NextRequest) {
     revalidatePath("/")
     revalidatePath("/admin")
     revalidatePath("/fixtures")
+    revalidatePath("/predicciones")
   }
 
-  return NextResponse.json({ updated, checked: matches.length })
+  return NextResponse.json({ updated, checked: finished, unmatched })
 }

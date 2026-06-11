@@ -1,0 +1,21 @@
+name: Sync resultados
+
+on:
+  schedule:
+    # 00, 12 y 18 hora argentina (UTC-3) → 03, 15 y 21 UTC
+    - cron: "0 3,15,21 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar al endpoint de sincronización
+        run: |
+          response=$(curl -s -w "\n%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://prode-2026.vercel.app/api/sync-results")
+          body=$(echo "$response" | head -n -1)
+          code=$(echo "$response" | tail -n 1)
+          echo "HTTP $code — $body"
+          [ "$code" = "200" ]

@@ -16,10 +16,13 @@ export function SyncResultsButton() {
       const res = await fetch("/api/sync-results")
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Error desconocido")
-      const msg =
+      let msg =
         data.updated > 0
           ? `${data.updated} partido(s) actualizado(s) de ${data.checked} finalizados`
-          : `Sin novedades (${data.checked} partidos revisados)`
+          : `Sin novedades (${data.checked} partidos finalizados revisados)`
+      if (data.unmatched?.length > 0) {
+        msg += ` — sin match en la base: ${data.unmatched.join(", ")}`
+      }
       setMessage(msg)
       setStatus("done")
       if (data.updated > 0) window.location.reload()

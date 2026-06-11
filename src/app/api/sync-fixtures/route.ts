@@ -127,7 +127,7 @@ export async function GET(req: NextRequest) {
           predictions.map((p) =>
             prisma.prediction.update({
               where: { id: p.id },
-              data: { points: calcPoints(homeScore, awayScore, p.homeScore, p.awayScore) },
+              data: { points: calcPoints(homeScore, awayScore, p.homeScore, p.awayScore, fixture.stage) },
             }),
           ),
         )
