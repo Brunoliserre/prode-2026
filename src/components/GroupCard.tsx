@@ -6,6 +6,7 @@ import { ChevronUp, Check, Loader, Save } from "lucide-react"
 import { cn, matchResult } from "@/lib/utils"
 import { getCountryCode } from "@/lib/flags"
 import { submitPrediction } from "@/lib/actions"
+import { MatchPredictionsModal } from "./MatchPredictionsModal"
 import * as Flags from "country-flag-icons/react/3x2"
 
 type Fixture = {
@@ -108,8 +109,11 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
             const inp = inputs[fixture.id]
             const canPredict = !!userId && !started && !finished
 
+            const live = started && !finished
+
             return (
-              <div key={fixture.id} className="flex items-center gap-1 border-b border-gray-100 px-2 py-2.5 last:border-0 sm:gap-2 sm:px-3 dark:border-white/5">
+              <div key={fixture.id} className="border-b border-gray-100 last:border-0 dark:border-white/5">
+              <div className="flex items-center gap-1 px-2 py-2.5 sm:gap-2 sm:px-3">
 
                 {/* Status */}
                 <div className="w-9 shrink-0 sm:w-11">
@@ -223,6 +227,18 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                   ) : null}
                 </div>
 
+              </div>
+
+              {live && userId && (
+                <div className="flex justify-center pb-2.5">
+                  <MatchPredictionsModal
+                    fixtureId={fixture.id}
+                    homeTeam={fixture.homeTeam}
+                    awayTeam={fixture.awayTeam}
+                    currentUserId={userId}
+                  />
+                </div>
+              )}
               </div>
             )
           })}

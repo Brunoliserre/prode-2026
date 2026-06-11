@@ -64,6 +64,38 @@ export async function submitPrediction(
   revalidatePath("/predicciones")
 }
 
+// Everyone's predictions for a fixture — only visible once the match started,
+// so nobody can copy picks before kickoff
+export async function getFixturePredictions(fixtureId: string) {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error("No autenticado")
+
+  const fixture = await prisma.fixture.findUnique({ where: { id: fixtureId } })
+  if (!fixture) throw new Error("Partido no encontrado")
+  if (new Date(fixture.matchDate) > new Date()) {
+    throw new Error("El partido todavía no comenzó")
+  }
+
+  const predictions = await prisma.prediction.findMany({
+    where: { fixtureId },
+    select: {
+      homeScore: true,
+      awayScore: true,
+      user: { select: { id: true, name: true, image: true } },
+    },
+  })
+
+  return predictions
+    .map((p) => ({
+      userId: p.user.id,
+      name: p.user.name,
+      image: p.user.image,
+      homeScore: p.homeScore,
+      awayScore: p.awayScore,
+    }))
+    .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
+}
+
 // ── Tournament Picks ───────────────────────────────────────────────────────────
 
 export async function saveTournamentPicks(picks: Record<string, string>) {
