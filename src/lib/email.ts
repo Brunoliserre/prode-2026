@@ -73,6 +73,42 @@ export function announcementEmail(
   return { subject, html: baseTemplate("📢", subject, content) }
 }
 
+export function joinRequestEmail(
+  userName: string | null,
+  userEmail: string,
+): { subject: string; html: string } {
+  const name = userName ?? userEmail
+  const content = `
+    <p style="font-size:15px;margin:0 0 14px;color:#3f3f46;">
+      <strong>${name}</strong> quiere participar del pozo. 💸
+    </p>
+    <p style="font-size:14px;margin:0 0 20px;color:#52525b;line-height:1.6;">
+      Email: <a href="mailto:${userEmail}" style="color:#2563eb;">${userEmail}</a><br>
+      Cuando transfiera, marcalo como pagado en el panel de administración.
+    </p>
+    <a href="${APP_URL}/admin"
+       style="display:inline-block;background:#18181b;color:#ffffff;padding:11px 22px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">
+      Ir al panel admin →
+    </a>
+  `
+  return {
+    subject: `💰 ${name} quiere participar del pozo`,
+    html: baseTemplate("💰", "Nueva solicitud de participación", content),
+  }
+}
+
+export async function sendAdminEmail(subject: string, html: string): Promise<void> {
+  const admin = process.env.ADMIN_EMAIL
+  if (!admin) return
+  const transporter = getTransporter()
+  await transporter.sendMail({
+    from: `Prode 2026 <${process.env.GMAIL_USER}>`,
+    to: admin,
+    subject,
+    html,
+  })
+}
+
 export async function sendBulkEmail(
   users: { email: string; name: string | null }[],
   buildEmail: (user: { email: string; name: string | null }) => { subject: string; html: string },

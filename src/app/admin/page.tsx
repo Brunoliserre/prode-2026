@@ -7,6 +7,7 @@ import { TournamentAdmin } from "@/components/TournamentAdmin"
 import { DeleteUserForm } from "@/components/DeleteUserForm"
 import { EmailAdmin } from "@/components/EmailAdmin"
 import { UserTournamentPicksAdmin } from "@/components/UserTournamentPicksAdmin"
+import { PaidUsersAdmin } from "@/components/PaidUsersAdmin"
 import { ALL_TEAMS } from "@/lib/flags"
 
 export const revalidate = 0
@@ -20,7 +21,7 @@ export default async function AdminPage() {
 
   const users = await prisma.user.findMany({
     orderBy: { name: "asc" },
-    select: { id: true, name: true, email: true, image: true },
+    select: { id: true, name: true, email: true, image: true, hasPaid: true, wantsToJoin: true },
   })
 
   const allPicks = await prisma.tournamentPick.findMany({
@@ -80,6 +81,14 @@ export default async function AdminPage() {
           Usá el lápiz para cargar o corregir los picks de quien se olvidó de completarlos.
         </p>
         <UserTournamentPicksAdmin users={usersWithPicks} teams={ALL_TEAMS} />
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">
+        <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-white">Pozo acumulado</h2>
+        <p className="mb-4 text-sm text-gray-400 dark:text-neutral-500">
+          Marcá quiénes ya transfirieron su entrada. El pozo y la barra de la página principal se actualizan solos.
+        </p>
+        <PaidUsersAdmin users={users} />
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">

@@ -1,7 +1,8 @@
 import { auth, signIn } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getWCEmblem } from "@/lib/competition"
-import { cn } from "@/lib/utils"
+import { cn, ENTRY_AMOUNT } from "@/lib/utils"
+import { JoinPozoButton } from "@/components/JoinPozoButton"
 import Image from "next/image"
 
 export const revalidate = 60
@@ -13,7 +14,7 @@ export default async function Page() {
     return <LandingPage />
   }
 
-  return <LeaderboardPage />
+  return <LeaderboardPage userId={session.user.id} />
 }
 
 async function LandingPage() {
@@ -61,7 +62,7 @@ async function LandingPage() {
   )
 }
 
-async function LeaderboardPage() {
+async function LeaderboardPage({ userId }: { userId?: string }) {
   const users = await prisma.user.findMany({
     include: { predictions: true, tournamentPicks: true },
     orderBy: { name: "asc" },
@@ -77,6 +78,12 @@ async function LeaderboardPage() {
     })
     .sort((a, b) => b.total - a.total)
 
+  const me = userId ? users.find((u) => u.id === userId) : undefined
+  const paidCount = users.filter((u) => u.hasPaid).length
+  const pozo = paidCount * ENTRY_AMOUNT
+  const pozoMax = users.length * ENTRY_AMOUNT
+  const pozoPct = users.length > 0 ? Math.round((paidCount / users.length) * 100) : 0
+
   const rankIcon = (i: number) =>
     i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : String(i + 1)
 
@@ -90,7 +97,45 @@ async function LeaderboardPage() {
   return (
     <div>
       <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">Tabla de Posiciones</h1>
-      
+
+      {users.length > 0 && (
+        <div className="mb-6 mt-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/5 dark:bg-neutral-900">
+          <div className="mb-3 flex items-end justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 text-xl dark:bg-emerald-500/10">
+                💰
+              </span>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-500">
+                  Pozo acumulado
+                </p>
+                <p className="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">
+                  $ {pozo.toLocaleString("es-AR")}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {paidCount}/{users.length}
+              </p>
+              <p className="text-[11px] text-gray-400 dark:text-neutral-500">transfirieron</p>
+            </div>
+          </div>
+
+          <div className="h-2.5 overflow-hidden rounded-full bg-gray-100 dark:bg-white/5">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-400 transition-[width] duration-700 ease-out"
+              style={{ width: `${pozoPct}%` }}
+            />
+          </div>
+          <div className="mt-1.5 flex justify-between text-[11px] text-gray-300 dark:text-neutral-600">
+            <span>$ 0</span>
+            <span>$ {pozoMax.toLocaleString("es-AR")}</span>
+          </div>
+
+          {me && <JoinPozoButton hasPaid={me.hasPaid} wantsToJoin={me.wantsToJoin} />}
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <p className="text-gray-400 dark:text-neutral-500">Todavía no hay participantes.</p>

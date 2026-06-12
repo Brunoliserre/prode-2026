@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { auth } from "./auth"
 import { prisma } from "./prisma"
 import { calcPoints, PICK_POINTS, TOURNAMENT_START } from "./utils"
-import { announcementEmail, reminderEmail, sendBulkEmail } from "./email"
+import { announcementEmail, joinRequestEmail, reminderEmail, sendAdminEmail, sendBulkEmail } from "./email"
 
 // ── Admin: email ───────────────────────────────────────────────────────────────
 
@@ -37,6 +37,42 @@ export async function deleteUser(userId: string) {
   await prisma.user.delete({ where: { id: userId } })
   revalidatePath("/admin")
   revalidatePath("/")
+}
+
+// Admin: mark whether a user transferred their entry money (pozo)
+export async function setUserPaid(userId: string, paid: boolean) {
+  const session = await auth()
+  if (session?.user?.email !== process.env.ADMIN_EMAIL) throw new Error("No autorizado")
+
+  await prisma.user.update({ where: { id: userId }, data: { hasPaid: paid } })
+
+  revalidatePath("/")
+  revalidatePath("/admin")
+}
+
+// User: raise a hand to join the pozo — flags the user and notifies the admin
+export async function requestToJoinPozo() {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error("No autenticado")
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+  if (!user) throw new Error("Usuario no encontrado")
+  if (user.hasPaid) throw new Error("Ya estás participando del pozo")
+  if (user.wantsToJoin) return // already requested, don't spam the admin
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { wantsToJoin: true },
+  })
+
+  // Best-effort: the request is saved even if the email fails
+  try {
+    const { subject, html } = joinRequestEmail(user.name, user.email)
+    await sendAdminEmail(subject, html)
+  } catch {}
+
+  revalidatePath("/")
+  revalidatePath("/admin")
 }
 
 // ── Match Predictions ──────────────────────────────────────────────────────────
