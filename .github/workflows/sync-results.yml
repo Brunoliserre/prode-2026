@@ -14,7 +14,7 @@ jobs:
         run: |
           response=$(curl -s -w "\n%{http_code}" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://prode-2026.vercel.app/api/sync-results")
+            "https://prode-2026-tau.vercel.app/api/sync-results")
           body=$(echo "$response" | head -n -1)
           code=$(echo "$response" | tail -n 1)
           echo "HTTP $code — $body"
