@@ -1,7 +1,7 @@
 import { getCountryCode } from "@/lib/flags"
 import * as Flags from "country-flag-icons/react/3x2"
 
-export const revalidate = 3600
+export const revalidate = 900
 
 const API_TO_LOCAL: Record<string, string> = {
   "United States": "USA",
@@ -62,7 +62,7 @@ type TeamCards = { yellow: number; red: number }
 async function fetchScorers(apiKey: string): Promise<Scorer[]> {
   const res = await fetch(
     "https://api.football-data.org/v4/competitions/WC/scorers?limit=30",
-    { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 3600 } },
+    { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 900 } },
   )
   if (!res.ok) return []
   const data = await res.json()
@@ -72,7 +72,7 @@ async function fetchScorers(apiKey: string): Promise<Scorer[]> {
 async function fetchMatches(apiKey: string): Promise<Match[]> {
   const res = await fetch(
     "https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED",
-    { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 3600 } },
+    { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 900 } },
   )
   if (!res.ok) return []
   const data = await res.json()
@@ -83,7 +83,7 @@ async function fetchMatches(apiKey: string): Promise<Match[]> {
 async function fetchEspnEvents(): Promise<EspnEvent[]> {
   const res = await fetch(
     "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=300",
-    { next: { revalidate: 3600 } },
+    { next: { revalidate: 900 } },
   )
   if (!res.ok) return []
   const data = await res.json()
@@ -159,7 +159,7 @@ export default async function EstadisticasPage() {
       <div>
         <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">Estadísticas</h1>
         <p className="text-sm text-gray-400 dark:text-neutral-500">
-          Datos actualizados cada hora
+          Datos actualizados cada 15 minutos
         </p>
       </div>
 

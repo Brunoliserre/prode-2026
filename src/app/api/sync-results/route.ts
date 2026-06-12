@@ -147,6 +147,7 @@ export async function GET(req: NextRequest) {
     revalidatePath("/admin")
     revalidatePath("/fixtures")
     revalidatePath("/predicciones")
+    revalidatePath("/estadisticas")
   }
 
   return NextResponse.json({ updated, checked: finished, unmatched })
