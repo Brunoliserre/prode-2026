@@ -12,6 +12,7 @@
     "db:studio": "prisma studio",
     "db:simulate": "tsx prisma/simulate.ts",
     "db:simulate:cleanup": "tsx prisma/simulate.ts --cleanup",
+    "db:load-predictions": "tsx prisma/load-predictions.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {
