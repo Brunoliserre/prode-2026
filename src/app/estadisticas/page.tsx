@@ -105,11 +105,6 @@ export default async function EstadisticasPage() {
     fetchEspnEvents(),
   ])
 
-  // Asistencias (el endpoint de scorers ya trae las asistencias de cada goleador)
-  const assistRows = scorers
-    .filter((s) => s.assists > 0)
-    .sort((a, b) => b.assists - a.assists)
-
   // Goles por selección
   const teamGoals: Record<string, number> = {}
   for (const m of matches) {
@@ -188,7 +183,7 @@ export default async function EstadisticasPage() {
                 { label: "Goles", center: true },
               ]}
             >
-              {scorers.map((s, i) => (
+              {scorers.slice(0, 10).map((s, i) => (
                 <tr key={i} className="border-b border-gray-100 last:border-0 dark:border-white/5">
                   <td className="px-3 py-2.5 font-mono text-xs text-gray-400 dark:text-neutral-500">{i + 1}</td>
                   <td className="max-w-0 px-3 py-2.5">
@@ -205,34 +200,6 @@ export default async function EstadisticasPage() {
               ))}
             </StatsTable>
           </div>
-
-          {/* Asistencias */}
-          <StatsTable
-            title="Asistencias"
-            icon="🎯"
-            empty={assistRows.length === 0}
-            headers={[
-              { label: "Jugador" },
-              { label: "País" },
-              { label: "Ast", center: true },
-            ]}
-          >
-            {assistRows.map((s, i) => (
-              <tr key={i} className="border-b border-gray-100 last:border-0 dark:border-white/5">
-                <td className="px-3 py-2.5 font-mono text-xs text-gray-400 dark:text-neutral-500">{i + 1}</td>
-                <td className="max-w-0 px-3 py-2.5">
-                  <p className="truncate text-sm font-medium text-gray-800 dark:text-neutral-100">{s.player.name}</p>
-                </td>
-                <td className="whitespace-nowrap px-3 py-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <TeamFlag team={s.team.name} />
-                    <span className="text-xs text-gray-500 dark:text-neutral-400">{localName(s.team.name)}</span>
-                  </div>
-                </td>
-                <td className="w-12 px-2 py-2.5 text-center font-bold text-gray-900 dark:text-white">{s.assists}</td>
-              </tr>
-            ))}
-          </StatsTable>
 
           {/* Goles por selección */}
           <StatsTable

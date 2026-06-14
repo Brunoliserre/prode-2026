@@ -52,7 +52,7 @@ export function JoinPozoButton({ hasPaid, wantsToJoin }: Props) {
         className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-60"
       >
         {isPending ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <HandCoins className="h-3.5 w-3.5" />}
-        ¿Querés participar? Son 10.000 por persona.
+          ¿Querés participar? Son 10.000 por persona
       </button>
       {error && <span className="text-xs text-red-500">No se pudo enviar, probá de nuevo</span>}
     </div>
