@@ -15,7 +15,7 @@ interface Props {
 export const TOP10 = [
   "France", "Spain", "Argentina", "England",
   "Portugal", "Brazil", "Netherlands", "Morocco",
-  "Belgium", "Germany",
+  "Belgium", "Germany", "USA",
 ]
 
 const CATEGORIES = [
