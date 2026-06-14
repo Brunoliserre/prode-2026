@@ -5,6 +5,7 @@ import Image from "next/image"
 import { Eye, Loader, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getFixturePredictions } from "@/lib/actions"
+import { esTeamName } from "@/lib/flags"
 
 type UserPrediction = {
   userId: string
@@ -63,7 +64,7 @@ export function MatchPredictionsModal({ fixtureId, homeTeam, awayTeam, currentUs
             <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-white/5">
               <div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {homeTeam} vs {awayTeam}
+                  {esTeamName(homeTeam)} vs {esTeamName(awayTeam)}
                 </p>
                 <p className="text-[11px] text-gray-400 dark:text-neutral-500">
                   Predicciones de todos los participantes

@@ -117,3 +117,88 @@ export function getCountryCode(teamName: string): string | undefined {
 }
 
 export const ALL_TEAMS = Object.keys(COUNTRY_CODES).sort((a, b) => a.localeCompare(b))
+
+// Nombre en español para mostrar. La DB guarda los nombres en inglés (canónicos);
+// esto traduce SOLO el texto visible. Si no hay traducción, devuelve el original
+// (así nombres de jugadores u otros valores pasan sin tocar).
+const SPANISH_NAMES: Record<string, string> = {
+  // CONCACAF
+  USA: "Estados Unidos",
+  Canada: "Canadá",
+  Mexico: "México",
+  Panama: "Panamá",
+  Haiti: "Haití",
+  "Trinidad and Tobago": "Trinidad y Tobago",
+  Curaçao: "Curazao",
+  Curacao: "Curazao",
+
+  // CONMEBOL
+  Brazil: "Brasil",
+  Peru: "Perú",
+
+  // UEFA
+  Germany: "Alemania",
+  France: "Francia",
+  Spain: "España",
+  England: "Inglaterra",
+  Netherlands: "Países Bajos",
+  Belgium: "Bélgica",
+  Italy: "Italia",
+  Croatia: "Croacia",
+  Denmark: "Dinamarca",
+  Switzerland: "Suiza",
+  Poland: "Polonia",
+  Romania: "Rumania",
+  "Czech Republic": "Chequia",
+  Czechia: "Chequia",
+  Hungary: "Hungría",
+  Scotland: "Escocia",
+  Wales: "Gales",
+  Slovakia: "Eslovaquia",
+  Slovenia: "Eslovenia",
+  Turkey: "Turquía",
+  Ukraine: "Ucrania",
+  Greece: "Grecia",
+  Norway: "Noruega",
+  Sweden: "Suecia",
+  Finland: "Finlandia",
+  Iceland: "Islandia",
+  "Northern Ireland": "Irlanda del Norte",
+  Luxembourg: "Luxemburgo",
+
+  // CAF
+  Morocco: "Marruecos",
+  Egypt: "Egipto",
+  "Ivory Coast": "Costa de Marfil",
+  Cameroon: "Camerún",
+  Algeria: "Argelia",
+  Tunisia: "Túnez",
+  "South Africa": "Sudáfrica",
+  Mali: "Malí",
+  "DR Congo": "RD Congo",
+  "Congo DR": "RD Congo",
+  "Congo, DR": "RD Congo",
+  Gabon: "Gabón",
+  "Cape Verde": "Cabo Verde",
+  "Cape Verde Islands": "Cabo Verde",
+
+  // AFC
+  Japan: "Japón",
+  "South Korea": "Corea del Sur",
+  Iran: "Irán",
+  "Saudi Arabia": "Arabia Saudita",
+  Uzbekistan: "Uzbekistán",
+  Jordan: "Jordania",
+  Iraq: "Irak",
+  Oman: "Omán",
+  Bahrain: "Baréin",
+  UAE: "Emiratos Árabes Unidos",
+  Syria: "Siria",
+
+  // OFC
+  "New Zealand": "Nueva Zelanda",
+}
+
+export function esTeamName(name: string): string {
+  return SPANISH_NAMES[name] ?? name
+}

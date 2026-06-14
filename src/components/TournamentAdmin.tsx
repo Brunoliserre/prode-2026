@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { awardTournamentPoints } from "@/lib/actions"
 import { PICK_POINTS } from "@/lib/utils"
+import { esTeamName } from "@/lib/flags"
 
 const CATEGORIES = [
   { key: "CHAMPION",   label: "Campeón del Mundo", icon: "🏆", type: "team",   allowNA: false },
@@ -51,7 +52,7 @@ function CategoryRow({ category, teams }: { category: typeof CATEGORIES[number];
             className="rounded-lg border border-gray-200 bg-white py-1.5 pl-2 pr-8 text-sm text-gray-900 focus:border-blue-400 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
           >
             <option value="">Seleccionar...</option>
-            {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+            {teams.map((t) => <option key={t} value={t}>{esTeamName(t)}</option>)}
           </select>
         ) : (
           <input

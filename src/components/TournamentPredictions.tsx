@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { getCountryCode } from "@/lib/flags"
+import { getCountryCode, esTeamName } from "@/lib/flags"
 import { saveTournamentPicks } from "@/lib/actions"
 import * as Flags from "country-flag-icons/react/3x2"
 
@@ -52,7 +52,7 @@ function TeamSelect({ value, onChange, teams }: { value: string; onChange: (v: s
         className="flex-1 rounded-lg border border-gray-200 bg-white py-1.5 pl-2 pr-8 text-sm text-gray-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
       >
         <option value="">Seleccionar equipo...</option>
-        {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+        {teams.map((t) => <option key={t} value={t}>{esTeamName(t)}</option>)}
       </select>
     </div>
   )
@@ -137,7 +137,7 @@ export function TournamentPredictions({ teams, initialPicks, locked }: Props) {
               </div>
               {locked ? (
                 <p className="text-sm text-gray-500 dark:text-neutral-400">
-                  {picks[cat.key] || <span className="italic text-gray-300 dark:text-neutral-600">Sin selección</span>}
+                  {picks[cat.key] ? esTeamName(picks[cat.key]) : <span className="italic text-gray-300 dark:text-neutral-600">Sin selección</span>}
                 </p>
               ) : cat.type === "team" ? (
                 <TeamSelect value={picks[cat.key]} onChange={(v) => set(cat.key, v)} teams={cat.teams === "top10" ? TOP10 : teams} />

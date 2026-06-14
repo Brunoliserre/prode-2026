@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { ProfileForm } from "@/components/ProfileForm"
+import { esTeamName } from "@/lib/flags"
 
 export const revalidate = 0
 
@@ -76,7 +77,7 @@ export default async function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-gray-400 dark:text-neutral-500">{meta.label}</p>
                     <p className={`truncate text-sm font-medium ${pick ? "text-gray-800 dark:text-neutral-100" : "italic text-gray-300 dark:text-neutral-600"}`}>
-                      {pick ? pick.value : "Sin selección"}
+                      {pick ? esTeamName(pick.value) : "Sin selección"}
                     </p>
                   </div>
                   <div className="shrink-0">

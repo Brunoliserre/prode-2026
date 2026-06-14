@@ -1,4 +1,4 @@
-import { getCountryCode } from "@/lib/flags"
+import { getCountryCode, esTeamName } from "@/lib/flags"
 import * as Flags from "country-flag-icons/react/3x2"
 
 export const revalidate = 900
@@ -192,7 +192,7 @@ export default async function EstadisticasPage() {
                   <td className="whitespace-nowrap px-3 py-2.5">
                     <div className="flex items-center gap-1.5">
                       <TeamFlag team={s.team.name} />
-                      <span className="text-xs text-gray-500 dark:text-neutral-400">{localName(s.team.name)}</span>
+                      <span className="text-xs text-gray-500 dark:text-neutral-400">{esTeamName(localName(s.team.name))}</span>
                     </div>
                   </td>
                   <td className="w-12 px-2 py-2.5 text-center font-bold text-gray-900 dark:text-white">{s.goals}</td>
@@ -214,7 +214,7 @@ export default async function EstadisticasPage() {
                 <td className="max-w-0 px-3 py-2.5">
                   <div className="flex items-center gap-1.5">
                     <TeamFlag team={r.team} />
-                    <span className="truncate text-sm font-medium text-gray-800 dark:text-neutral-100">{localName(r.team)}</span>
+                    <span className="truncate text-sm font-medium text-gray-800 dark:text-neutral-100">{esTeamName(localName(r.team))}</span>
                   </div>
                 </td>
                 <td className="w-14 px-2 py-2.5 text-center font-bold text-gray-900 dark:text-white">{r.goals}</td>
@@ -235,7 +235,7 @@ export default async function EstadisticasPage() {
                 <td className="max-w-0 px-3 py-2.5">
                   <div className="flex items-center gap-1.5">
                     <TeamFlag team={r.team} />
-                    <span className="truncate text-sm font-medium text-gray-800 dark:text-neutral-100">{localName(r.team)}</span>
+                    <span className="truncate text-sm font-medium text-gray-800 dark:text-neutral-100">{esTeamName(localName(r.team))}</span>
                   </div>
                 </td>
                 <td className="w-14 px-2 py-2.5 text-center">
@@ -261,7 +261,7 @@ export default async function EstadisticasPage() {
                 <td className="max-w-0 px-3 py-2.5">
                   <div className="flex items-center gap-1.5">
                     <TeamFlag team={r.team} />
-                    <span className="truncate text-sm font-medium text-gray-800 dark:text-neutral-100">{localName(r.team)}</span>
+                    <span className="truncate text-sm font-medium text-gray-800 dark:text-neutral-100">{esTeamName(localName(r.team))}</span>
                   </div>
                 </td>
                 <td className="w-14 px-2 py-2.5 text-center">
@@ -302,7 +302,7 @@ export default async function EstadisticasPage() {
                   <td className="max-w-0 px-3 py-2.5">
                     <div className="flex items-center gap-1.5">
                       <TeamFlag team={r.team} />
-                      <span className="truncate text-sm font-medium text-gray-800 dark:text-neutral-100">{localName(r.team)}</span>
+                      <span className="truncate text-sm font-medium text-gray-800 dark:text-neutral-100">{esTeamName(localName(r.team))}</span>
                     </div>
                   </td>
                   <td className="w-12 px-2 py-2.5 text-center text-sm text-gray-500 dark:text-neutral-400">{r.yellow}</td>

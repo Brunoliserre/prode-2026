@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import { ChevronUp, Check, Loader, Save } from "lucide-react"
 import { cn, matchResult } from "@/lib/utils"
-import { getCountryCode } from "@/lib/flags"
+import { getCountryCode, esTeamName } from "@/lib/flags"
 import { submitPrediction } from "@/lib/actions"
 import { MatchPredictionsModal } from "./MatchPredictionsModal"
 import * as Flags from "country-flag-icons/react/3x2"
@@ -113,7 +113,115 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
 
             return (
               <div key={fixture.id} className="border-b border-gray-100 last:border-0 dark:border-white/5">
-              <div className="flex items-center gap-1 px-2 py-2.5 sm:gap-2 sm:px-3">
+
+              {/* ── Mobile: equipos apilados (Local arriba, Visitante abajo) ── */}
+              <div className="flex flex-col gap-2 px-3 py-2.5 sm:hidden">
+                {/* Top row: estado + pred/real/hora/guardar */}
+                <div className="flex items-start justify-between gap-2">
+                  <StatusBadge started={started} finished={finished} matchday={fixture.matchday} group={dateMode ? fixture.group : undefined} />
+
+                  {canPredict ? (
+                    <div className="flex items-center gap-1">
+                      {inp.status === "ok" && <Save className="h-3 w-3 shrink-0 text-emerald-500 dark:text-emerald-400" />}
+                      <button
+                        onClick={() => save(fixture.id)}
+                        disabled={inp.saving || inp.home === "" || inp.away === ""}
+                        className={cn(
+                          "flex h-6 items-center gap-1 rounded px-2 text-xs font-semibold transition-colors disabled:opacity-40",
+                          inp.status === "ok"
+                            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+                            : "bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
+                        )}
+                      >
+                        {inp.saving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                        Guardar
+                      </button>
+                      {inp.status === "error" && <span className="text-[10px] text-red-500">!</span>}
+                    </div>
+                  ) : !started && !finished ? (
+                    <span className="whitespace-nowrap text-[11px] text-gray-300 dark:text-neutral-600">
+                      {new Date(fixture.matchDate).toLocaleTimeString("es-AR", {
+                        hour: "2-digit", minute: "2-digit",
+                        timeZone: "America/Argentina/Buenos_Aires",
+                      })}
+                    </span>
+                  ) : prediction ? (
+                    <div className="flex flex-col items-end gap-0.5">
+                      <div className="flex items-center gap-1 whitespace-nowrap">
+                        {finished && <span className="text-[10px] text-gray-300 dark:text-neutral-600">pred</span>}
+                        <span className="font-mono text-xs text-gray-400 dark:text-neutral-500">
+                          {prediction.homeScore}–{prediction.awayScore}
+                        </span>
+                        {finished && <PointsBadge points={prediction.points} />}
+                      </div>
+                      {finished && (
+                        <div className="flex items-center gap-1 whitespace-nowrap">
+                          <span className="text-[10px] text-gray-300 dark:text-neutral-600">real</span>
+                          <span className={cn(
+                            "rounded px-1.5 py-px font-mono text-xs font-semibold",
+                            prediction.points > 0
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                              : "bg-red-500/10 text-red-500 dark:text-red-400",
+                          )}>
+                            {fixture.homeScore}–{fixture.awayScore}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : live ? (
+                    <span className="animate-pulse whitespace-nowrap text-[10px] font-bold text-yellow-500 dark:text-yellow-400">EN VIVO</span>
+                  ) : null}
+                </div>
+
+                {/* Local */}
+                <div className="flex items-center gap-2">
+                  <TeamFlag team={fixture.homeTeam} />
+                  <span className={cn(
+                    "min-w-0 flex-1 truncate text-sm font-medium",
+                    finished && result === "away" ? "text-gray-300 line-through dark:text-neutral-600" : "text-gray-800 dark:text-neutral-100",
+                  )}>
+                    {esTeamName(fixture.homeTeam)}
+                  </span>
+                  {canPredict ? (
+                    <input
+                      type="number" min={0} max={30}
+                      value={inp.home}
+                      onChange={e => setField(fixture.id, "home", e.target.value)}
+                      className={inputCls}
+                      placeholder="–"
+                      style={{ height: "1.5rem" }}
+                    />
+                  ) : finished ? (
+                    <span className="w-10 text-center text-sm font-bold text-gray-900 dark:text-white">{fixture.homeScore}</span>
+                  ) : null}
+                </div>
+
+                {/* Visitante */}
+                <div className="flex items-center gap-2">
+                  <TeamFlag team={fixture.awayTeam} />
+                  <span className={cn(
+                    "min-w-0 flex-1 truncate text-sm font-medium",
+                    finished && result === "home" ? "text-gray-300 line-through dark:text-neutral-600" : "text-gray-800 dark:text-neutral-100",
+                  )}>
+                    {esTeamName(fixture.awayTeam)}
+                  </span>
+                  {canPredict ? (
+                    <input
+                      type="number" min={0} max={30}
+                      value={inp.away}
+                      onChange={e => setField(fixture.id, "away", e.target.value)}
+                      className={inputCls}
+                      placeholder="–"
+                      style={{ height: "1.5rem" }}
+                    />
+                  ) : finished ? (
+                    <span className="w-10 text-center text-sm font-bold text-gray-900 dark:text-white">{fixture.awayScore}</span>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* ── Desktop: una sola línea ── */}
+              <div className="hidden items-center gap-1 px-2 py-2.5 sm:flex sm:gap-2 sm:px-3">
 
                 {/* Status */}
                 <div className="w-9 shrink-0 sm:w-11">
@@ -126,7 +234,7 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                     "truncate text-sm font-medium",
                     finished && result === "away" ? "text-gray-300 line-through dark:text-neutral-600" : "text-gray-800 dark:text-neutral-100",
                   )}>
-                    {fixture.homeTeam}
+                    {esTeamName(fixture.homeTeam)}
                   </span>
                   <TeamFlag team={fixture.homeTeam} />
                   {canPredict && (
@@ -169,7 +277,7 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                     "truncate text-sm font-medium",
                     finished && result === "home" ? "text-gray-300 line-through dark:text-neutral-600" : "text-gray-800 dark:text-neutral-100",
                   )}>
-                    {fixture.awayTeam}
+                    {esTeamName(fixture.awayTeam)}
                   </span>
                 </div>
 

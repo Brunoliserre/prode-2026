@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Check, Loader, Pencil, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getCountryCode } from "@/lib/flags"
+import { getCountryCode, esTeamName } from "@/lib/flags"
 import { adminSaveUserPicks } from "@/lib/actions"
 import { TOP10 } from "./TournamentPredictions"
 import * as Flags from "country-flag-icons/react/3x2"
@@ -45,7 +45,7 @@ function PickCell({ category, value }: { category: string; value: string | undef
   return (
     <span className="inline-flex items-center gap-1.5">
       <TeamFlag team={value} />
-      <span className="text-gray-700 dark:text-neutral-300">{value}</span>
+      <span className="text-gray-700 dark:text-neutral-300">{esTeamName(value)}</span>
     </span>
   )
 }
@@ -176,7 +176,7 @@ export function UserTournamentPicksAdmin({ users, teams }: { users: UserRow[]; t
                         >
                           <option value="">—</option>
                           {teamOptions(cat, draft[cat.key]).map((t) => (
-                            <option key={t} value={t}>{t}</option>
+                            <option key={t} value={t}>{esTeamName(t)}</option>
                           ))}
                         </select>
                       )

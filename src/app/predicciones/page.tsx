@@ -1,10 +1,7 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { FixturesView } from "@/components/FixturesView"
-import { TournamentPredictions } from "@/components/TournamentPredictions"
 import { getWCEmblem } from "@/lib/competition"
-import { ALL_TEAMS } from "@/lib/flags"
-import { TOURNAMENT_START } from "@/lib/utils"
 
 export const revalidate = 0
 
@@ -15,7 +12,6 @@ export default async function PrediccionesPage() {
   const userId = session?.user?.id
   const now = new Date()
   const emblem = await getWCEmblem()
-  const locked = now >= TOURNAMENT_START
 
   const fixtures = await prisma.fixture.findMany({
     orderBy: [{ group: "asc" }, { matchday: "asc" }, { matchDate: "asc" }],
@@ -29,18 +25,6 @@ export default async function PrediccionesPage() {
     })
     for (const p of preds) predMap.set(p.fixtureId, p)
   }
-
-  // Load existing tournament picks for this user
-  const initialPicks: Record<string, string> = {}
-  if (userId) {
-    const picks = await prisma.tournamentPick.findMany({ where: { userId } })
-    for (const p of picks) initialPicks[p.category] = p.value
-  }
-
-  const fixtureTeams = [...new Set(fixtures.flatMap((f) => [f.homeTeam, f.awayTeam]))].sort(
-    (a, b) => a.localeCompare(b),
-  )
-  const teams = fixtureTeams.length > 0 ? fixtureTeams : ALL_TEAMS
 
   return (
     <div className="space-y-8">
@@ -64,8 +48,6 @@ export default async function PrediccionesPage() {
           />
         )}
       </div>
-
-      <TournamentPredictions teams={teams} initialPicks={initialPicks} locked={locked} />
     </div>
   )
 }
