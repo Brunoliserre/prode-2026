@@ -97,6 +97,9 @@ const ALIASES: Record<string, string> = {
   paraguay: "Paraguay",
   indonesia: "Indonesia",
   ucrania: "Ukraine",
+  curazao: "Curaçao", curacao: "Curaçao",
+  qatar: "Qatar",
+  haiti: "Haiti",
 }
 
 // Strip accents, lowercase, collapse whitespace → for forgiving comparisons.
