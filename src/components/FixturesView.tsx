@@ -26,8 +26,19 @@ interface Props {
   emblemUrl?: string
 }
 
+// "Hoy" según el huso de Argentina (igual que los horarios mostrados).
+const arDay = (d: Date | string) =>
+  new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" })
+
 export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Props) {
   const [mode, setMode] = useState<"group" | "date">("group")
+
+  const todayMatches = useMemo(() => {
+    const today = arDay(now)
+    return [...fixtures]
+      .filter((f) => arDay(f.matchDate) === today)
+      .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())
+  }, [fixtures, now])
 
   const byGroup = useMemo(() => {
     const map = new Map<string, Fixture[]>()
@@ -62,6 +73,35 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
 
   return (
     <div>
+      {todayMatches.length > 0 && (
+        <div className="mb-6">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500">
+              <span className="h-2 w-2 animate-ping rounded-full bg-emerald-500" />
+            </span>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-neutral-400">
+              Partidos de hoy
+            </h2>
+            <span className="text-xs text-gray-300 dark:text-neutral-600">
+              {now.toLocaleDateString("es-AR", {
+                weekday: "long", day: "numeric", month: "long",
+                timeZone: "America/Argentina/Buenos_Aires",
+              })}
+            </span>
+          </div>
+          <GroupCard
+            group="hoy"
+            headerLabel={`Hoy · ${todayMatches.length} partido${todayMatches.length === 1 ? "" : "s"}`}
+            dateMode
+            matches={todayMatches}
+            predMap={predMap}
+            userId={userId}
+            emblemUrl={emblemUrl}
+            now={now}
+          />
+        </div>
+      )}
+
       <div className="mb-3 flex">
         <div className="flex rounded-lg border border-gray-200 p-0.5 dark:border-white/10">
           <button
