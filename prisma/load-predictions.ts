@@ -100,6 +100,8 @@ const ALIASES: Record<string, string> = {
   curazao: "Curaçao", curacao: "Curaçao",
   qatar: "Qatar",
   haiti: "Haiti",
+  "cabo verde": "Cape Verde Islands", "cabo verde islas": "Cape Verde Islands", "islas de cabo verde": "Cape Verde Islands",
+  "nueva zelanda": "New Zealand", "nueva zelandia": "New Zealand",
 }
 
 // Strip accents, lowercase, collapse whitespace → for forgiving comparisons.
