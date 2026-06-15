@@ -5,7 +5,7 @@ import { cn, ENTRY_AMOUNT } from "@/lib/utils"
 import { JoinPozoButton } from "@/components/JoinPozoButton"
 import Image from "next/image"
 
-export const revalidate = 60
+export const revalidate = 0
 
 export default async function Page() {
   const session = await auth()
