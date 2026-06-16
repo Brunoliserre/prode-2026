@@ -23,19 +23,19 @@ function runUnitTests() {
   console.log("  TESTS UNITARIOS – calcPoints()")
   console.log("══════════════════════════════════════════════════")
 
+  // Sistema rodriPT: +4 signo, +1 por equipo con goles exactos, +1 combo si ambos.
+  // El stage no escala el puntaje (se mantiene el parámetro por compatibilidad).
   const tests: [number, number, number, number, string | null, number, string][] = [
-    [2, 1, 2, 1, "GROUP_STAGE", 2, "Exacto gana local (2-1 = 2-1)"],
-    [2, 1, 3, 1, "GROUP_STAGE", 1, "Tendencia local, score diferente"],
-    [2, 1, 0, 0, "GROUP_STAGE", 0, "Tendencia incorrecta (empate vs local)"],
-    [0, 0, 0, 0, "GROUP_STAGE", 2, "Exacto empate (0-0)"],
-    [1, 1, 2, 2, "GROUP_STAGE", 1, "Tendencia empate, score diferente"],
-    [3, 1, 3, 1, null,          2, "Exacto, stage null → group stage"],
-    [2, 0, 1, 0, "LAST_32",    2, "Octavos – tendencia correcta → 2pts"],
-    [2, 0, 1, 0, "LAST_16",    3, "Dieciseisavos – tendencia correcta → 3pts"],
-    [2, 0, 1, 0, "QUARTER_FINALS", 4, "Cuartos – tendencia correcta → 4pts"],
-    [2, 0, 1, 0, "SEMI_FINALS",    5, "Semis – tendencia correcta → 5pts"],
-    [2, 0, 1, 0, "FINAL",          6, "Final – tendencia correcta → 6pts"],
-    [2, 0, 0, 1, "LAST_16",    0, "Dieciseisavos – tendencia incorrecta → 0pts"],
+    [2, 1, 2, 1, "GROUP_STAGE", 7, "Exacto gana local (2-1 = 2-1) → 4+1+1+1"],
+    [2, 1, 3, 1, "GROUP_STAGE", 5, "Signo local + acierta goles visitante → 4+1"],
+    [2, 1, 2, 0, "GROUP_STAGE", 5, "Signo local + acierta goles local → 4+1"],
+    [2, 1, 3, 0, "GROUP_STAGE", 4, "Signo local, ningún gol exacto → 4"],
+    [2, 1, 0, 0, "GROUP_STAGE", 0, "Signo incorrecto (empate vs local) → 0"],
+    [0, 0, 0, 0, "GROUP_STAGE", 7, "Exacto empate (0-0) → 4+1+1+1"],
+    [1, 1, 2, 2, "GROUP_STAGE", 4, "Signo empate, score diferente → 4"],
+    [3, 1, 3, 1, null,          7, "Exacto, stage null → 7"],
+    [2, 0, 1, 0, "FINAL",       5, "Final – signo + goles visitante (sin escalar) → 5"],
+    [1, 2, 1, 0, "LAST_16",     1, "Signo incorrecto pero acierta goles local → 1"],
   ]
 
   let passed = 0

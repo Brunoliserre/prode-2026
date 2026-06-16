@@ -169,7 +169,10 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                       )}
                     </div>
                   ) : live ? (
-                    <span className="animate-pulse whitespace-nowrap text-[10px] font-bold text-yellow-500 dark:text-yellow-400">EN VIVO</span>
+                    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+                      EN VIVO
+                    </span>
                   ) : null}
                 </div>
 
@@ -250,11 +253,14 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                 </div>
 
                 {/* Center */}
-                <div className="w-10 shrink-0 text-center sm:w-14">
+                <div className="w-10 shrink-0 text-center sm:w-16">
                   {finished ? (
                     <span className="text-sm font-bold text-gray-900 dark:text-white">{fixture.homeScore}–{fixture.awayScore}</span>
                   ) : started ? (
-                    <span className="animate-pulse text-[10px] font-bold text-yellow-500 dark:text-yellow-400">EN VIVO</span>
+                    <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+                      EN VIVO
+                    </span>
                   ) : (
                     <span className="text-xs text-gray-300 dark:text-neutral-700">vs</span>
                   )}
@@ -338,13 +344,21 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
               </div>
 
               {live && userId && (
-                <div className="flex justify-center pb-2.5">
-                  <MatchPredictionsModal
-                    fixtureId={fixture.id}
-                    homeTeam={fixture.homeTeam}
-                    awayTeam={fixture.awayTeam}
-                    currentUserId={userId}
-                  />
+                <div className="flex items-center gap-1 px-2 pb-2.5 sm:gap-2 sm:px-3">
+                  {/* Espaciadores que replican las columnas del partido para que el
+                      botón quede centrado bajo "EN VIVO" en desktop. */}
+                  <div className="hidden shrink-0 sm:block sm:w-11" />
+                  <div className="hidden flex-1 sm:block" />
+                  <div className="flex flex-1 justify-center sm:w-16 sm:flex-none sm:shrink-0">
+                    <MatchPredictionsModal
+                      fixtureId={fixture.id}
+                      homeTeam={fixture.homeTeam}
+                      awayTeam={fixture.awayTeam}
+                      currentUserId={userId}
+                    />
+                  </div>
+                  <div className="hidden flex-1 sm:block" />
+                  <div className="hidden shrink-0 sm:block sm:w-20" />
                 </div>
               )}
               </div>

@@ -84,23 +84,13 @@ async function LeaderboardPage({ userId }: { userId?: string }) {
       ).length
       return { id: u.id, name: u.name, image: u.image, total, matchPts, pickPts, played, plenos }
     })
-    .sort((a, b) => b.total - a.total)
+    .sort((a, b) => b.total - a.total || (a.name ?? "").localeCompare(b.name ?? ""))
 
   const me = userId ? users.find((u) => u.id === userId) : undefined
   const paidCount = users.filter((u) => u.hasPaid).length
   const pozo = paidCount * ENTRY_AMOUNT
   const pozoMax = users.length * ENTRY_AMOUNT
   const pozoPct = users.length > 0 ? Math.round((paidCount / users.length) * 100) : 0
-
-  const rankIcon = (i: number) =>
-    i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : String(i + 1)
-
-  // Soft full-row tint for the podium: gold, silver, copper
-  const medalRow = [
-    "bg-amber-100/60 hover:bg-amber-100/80 dark:bg-amber-400/10 dark:hover:bg-amber-400/15",
-    "bg-slate-200/50 hover:bg-slate-200/70 dark:bg-slate-300/10 dark:hover:bg-slate-300/15",
-    "bg-orange-100/50 hover:bg-orange-100/70 dark:bg-orange-400/10 dark:hover:bg-orange-400/15",
-  ]
 
   return (
     <div>
@@ -162,34 +152,44 @@ async function LeaderboardPage({ userId }: { userId?: string }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, i) => (
-                <tr
-                  key={row.id}
-                  className={cn(
-                    "border-b border-gray-100 transition-colors last:border-0 dark:border-white/5",
-                    medalRow[i] ?? "hover:bg-gray-50 dark:hover:bg-white/[0.03]",
-                  )}
-                >
-                  <td className="px-4 py-3 font-mono text-gray-400 dark:text-neutral-500">{rankIcon(i)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
-                      {row.image ? (
-                        <Image src={row.image} alt={row.name ?? ""} width={28} height={28} className="rounded-full" />
-                      ) : (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs text-gray-400 dark:bg-neutral-800 dark:text-neutral-500">
-                          {row.name?.[0] ?? "?"}
-                        </div>
-                      )}
-                      <span className="font-medium text-gray-800 dark:text-neutral-100">{row.name ?? "Anónimo"}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">{row.total}</td>
-                  <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.matchPts}</td>
-                  <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.plenos}</td>
-                  <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.pickPts}</td>
-                  <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.played}</td>
-                </tr>
-              ))}
+              {rows.map((row, i) => {
+                const rankIcon =
+                  i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : String(i + 1)
+                // Soft full-row tint for the podium: gold, silver, copper
+                const medalRow = [
+                  "bg-amber-100/60 hover:bg-amber-100/80 dark:bg-amber-400/10 dark:hover:bg-amber-400/15",
+                  "bg-slate-200/50 hover:bg-slate-200/70 dark:bg-slate-300/10 dark:hover:bg-slate-300/15",
+                  "bg-orange-100/50 hover:bg-orange-100/70 dark:bg-orange-400/10 dark:hover:bg-orange-400/15",
+                ]
+                return (
+                  <tr
+                    key={row.id}
+                    className={cn(
+                      "border-b border-gray-100 transition-colors last:border-0 dark:border-white/5",
+                      medalRow[i] ?? "hover:bg-gray-50 dark:hover:bg-white/[0.03]",
+                    )}
+                  >
+                    <td className="px-4 py-3 font-mono text-gray-400 dark:text-neutral-500">{rankIcon}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        {row.image ? (
+                          <Image src={row.image} alt={row.name ?? ""} width={28} height={28} className="rounded-full" />
+                        ) : (
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs text-gray-400 dark:bg-neutral-800 dark:text-neutral-500">
+                            {row.name?.[0] ?? "?"}
+                          </div>
+                        )}
+                        <span className="font-medium text-gray-800 dark:text-neutral-100">{row.name ?? "Anónimo"}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">{row.total}</td>
+                    <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.matchPts}</td>
+                    <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.plenos}</td>
+                    <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.pickPts}</td>
+                    <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.played}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

@@ -31,24 +31,21 @@ export const TOURNAMENT_START = new Date("2026-06-11T00:00:00-05:00")
 export const PICK_POINTS: Record<string, number> = {
   CHAMPION:   8,
   RUNNER_UP:  5,
-  MVP:        5,
-  PICHICHI:   5,
-  REVELATION: 3,
-  FAIR_PLAY:  3,
-  RUSTICO:    3,
-  DESASTROSO: 3,
-  DECEPCION:  3,
+  MVP:        13,
+  PICHICHI:   13,
+  REVELATION: 10,
+  FAIR_PLAY:  8,
+  RUSTICO:    8,
+  DESASTROSO: 10,
+  DECEPCION:  10,
 }
 
-const STAGE_POINTS: Record<string, number> = {
-  LAST_32:        2,
-  LAST_16:        3,
-  QUARTER_FINALS: 4,
-  SEMI_FINALS:    5,
-  THIRD_PLACE:    6,
-  FINAL:          6,
-}
-
+// Puntaje oficial (sistema "rodriPT"):
+//   +4 si se acierta el signo (gana local / gana visitante / empate)
+//   +1 por cada equipo cuyos goles se aciertan
+//   +1 combo extra si se aciertan los dos → el resultado exacto queda en 7
+// El parámetro `stage` se mantiene por compatibilidad de las llamadas; este
+// sistema no escala por fase del torneo.
 export function calcPoints(
   actualHome: number,
   actualAway: number,
@@ -56,12 +53,13 @@ export function calcPoints(
   predAway: number,
   stage?: string | null,
 ): number {
-  const tendency = matchResult(predHome, predAway) === matchResult(actualHome, actualAway)
-  if (!tendency) return 0
-
-  const isExact = predHome === actualHome && predAway === actualAway
-  const isGroup = !stage || stage === "GROUP_STAGE"
-
-  if (isGroup) return isExact ? 2 : 1
-  return STAGE_POINTS[stage] ?? 2
+  void stage
+  let pts = 0
+  if (matchResult(predHome, predAway) === matchResult(actualHome, actualAway)) pts += 4
+  const homeOk = predHome === actualHome
+  const awayOk = predAway === actualAway
+  if (homeOk) pts += 1
+  if (awayOk) pts += 1
+  if (homeOk && awayOk) pts += 1 // combo por clavar el resultado exacto
+  return pts
 }

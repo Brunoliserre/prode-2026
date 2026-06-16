@@ -12,33 +12,35 @@ export default function ReglasPage() {
 
       {/* Fase de Grupos */}
       <Section title="Fase de Grupos" icon="⚽">
+        <p className="mb-4 text-sm text-gray-500 dark:text-neutral-400">
+          Cada partido se puntúa por separado: acertar quién gana vale lo más, y sumás extra
+          si le pegás a los goles. El resultado exacto da el máximo (7 puntos).
+        </p>
         <div className="space-y-3">
           <RuleRow
-            label="Acierto de Tendencia"
+            label="Acierto del signo (1X2)"
             sublabel="Gana Local, Empate o Gana Visitante"
+            points={4}
+          />
+          <RuleRow
+            label="Goles de un equipo"
+            sublabel="+1 por cada equipo al que le aciertes los goles (hasta +2)"
             points={1}
           />
           <RuleRow
             label="Resultado Exacto (Pleno)"
-            sublabel="Suma tendencia + bonus por exactitud. También cuenta para desempate."
-            points={2}
-            badge="+1 bonus"
+            sublabel="Signo + goles de los dos equipos + bonus combo. También cuenta para desempate."
+            points={7}
+            badge="+1 combo"
           />
         </div>
       </Section>
 
       {/* Fase Eliminatoria */}
       <Section title="Fase Eliminatoria (Mata-Mata)" icon="⚔️">
-        <p className="mb-4 text-sm text-gray-500 dark:text-neutral-400">
-          Una vez finalizada la fase de grupos se habilita la carga para las rondas finales.
-          La dificultad sube, ¡y los puntos también!
-        </p>
-        <div className="space-y-3">
-          <RuleRow label="Dieciseisavos de Final" sublabel="Acierto de tendencia" points={2} />
-          <RuleRow label="Octavos de Final" sublabel="Acierto de tendencia" points={3} />
-          <RuleRow label="Cuartos de Final" sublabel="Acierto de tendencia" points={4} />
-          <RuleRow label="Semifinales" sublabel="Acierto de tendencia" points={5} />
-          <RuleRow label="Final y 3er Puesto" sublabel="Acierto de tendencia" points={6} />
+        <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
+          <span className="text-3xl">🚧</span>
+          <p className="text-sm font-medium text-gray-700 dark:text-neutral-300">Trabajando en ello</p>
         </div>
       </Section>
 
@@ -62,37 +64,37 @@ export default function ReglasPage() {
           <RuleRow
             label="MVP del Mundial"
             sublabel="MVP del torneo elegido por la FIFA"
-            points={5}
+            points={PICK_POINTS.MVP}
           />
           <RuleRow
             label="Pichichi"
             sublabel="Goleador del torneo"
-            points={5}
+            points={PICK_POINTS.PICHICHI}
           />
           <RuleRow
             label="Equipo Revelación"
             sublabel="Selección que nunca había superado los Octavos en su historia y llega a Cuartos o más"
-            points={3}
+            points={PICK_POINTS.REVELATION}
           />
           <RuleRow
             label="Premio Fair Play"
             sublabel="Equipo con menor puntaje de tarjetas al finalizar el Mundial"
-            points={3}
+            points={PICK_POINTS.FAIR_PLAY}
           />
           <RuleRow
             label="Premio Rústico"
             sublabel="Equipo con mayor puntaje de tarjetas (Amarilla = 1 pt, Roja = 3 pts) al finalizar el Mundial"
-            points={3}
+            points={PICK_POINTS.RUSTICO}
           />
           <RuleRow
             label="Premio Desastroso"
             sublabel="Selección más goleada del torneo"
-            points={3}
+            points={PICK_POINTS.DESASTROSO}
           />
           <RuleRow
             label="Premio Decepción"
             sublabel="Selección TOP 10 del ranking FIFA que no supera la Fase de Grupos"
-            points={3}
+            points={PICK_POINTS.DECEPCION}
           />
         </div>
       </Section>
@@ -100,14 +102,14 @@ export default function ReglasPage() {
       {/* Resumen */}
       <Section title="Resumen de puntos máximos" icon="📊">
         <div className="space-y-2">
-          <SummaryRow label="Fase de Grupos (72 partidos)" value="hasta 144 pts" />
-          <SummaryRow label="Fase Eliminatoria (46 partidos)" value="hasta 142 pts" />
+          <SummaryRow label="Fase de Grupos (72 partidos)" value="hasta 504 pts" />
+          <SummaryRow label="Fase Eliminatoria" value="Trabajando en ello" />
           <SummaryRow label="Campeón + Subcampeón" value="hasta 13 pts" />
-          <SummaryRow label="7 Premios Especiales" value="hasta 25 pts" />
+          <SummaryRow label="7 Premios Especiales" value="hasta 72 pts" />
           <div className="mt-3 rounded-xl bg-gray-900 px-4 py-3 dark:bg-white/5">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-white dark:text-white">Total máximo posible</span>
-              <span className="font-bold text-emerald-400">324 pts</span>
+              <span className="font-bold text-emerald-400">a confirmar</span>
             </div>
           </div>
         </div>

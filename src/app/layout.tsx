@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { NavBar } from "@/components/NavBar"
+import { WelcomeModal } from "@/components/WelcomeModal"
 import { getWCEmblem } from "@/lib/competition"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -31,6 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className={`${inter.className} bg-gray-50 text-gray-900 dark:bg-neutral-950 dark:text-neutral-100`}>
         <NavBar emblemUrl={emblem} />
+        <WelcomeModal />
         <main className="container mx-auto max-w-4xl px-4 py-8">{children}</main>
       </body>
     </html>

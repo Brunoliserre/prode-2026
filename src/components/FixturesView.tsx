@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { Eye, EyeOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { GroupsSection } from "./GroupsSection"
 import { GroupCard } from "./GroupCard"
@@ -32,17 +33,27 @@ const arDay = (d: Date | string) =>
 
 export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Props) {
   const [mode, setMode] = useState<"group" | "date">("group")
+  const [hideFinished, setHideFinished] = useState(false)
+
+  // Un partido "jugado" es el que ya tiene resultado cargado.
+  const visibleFixtures = useMemo(
+    () =>
+      hideFinished
+        ? fixtures.filter((f) => f.homeScore == null || f.awayScore == null)
+        : fixtures,
+    [fixtures, hideFinished],
+  )
 
   const todayMatches = useMemo(() => {
     const today = arDay(now)
-    return [...fixtures]
+    return [...visibleFixtures]
       .filter((f) => arDay(f.matchDate) === today)
       .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())
-  }, [fixtures, now])
+  }, [visibleFixtures, now])
 
   const byGroup = useMemo(() => {
     const map = new Map<string, Fixture[]>()
-    const sorted = [...fixtures].sort(
+    const sorted = [...visibleFixtures].sort(
       (a, b) =>
         (a.group ?? "").localeCompare(b.group ?? "") ||
         (a.matchday ?? 0) - (b.matchday ?? 0) ||
@@ -54,11 +65,11 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
       map.get(key)!.push(f)
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
-  }, [fixtures])
+  }, [visibleFixtures])
 
   const byDate = useMemo(() => {
     const map = new Map<number, Fixture[]>()
-    const sorted = [...fixtures].sort(
+    const sorted = [...visibleFixtures].sort(
       (a, b) =>
         (a.matchday ?? 0) - (b.matchday ?? 0) ||
         new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime(),
@@ -69,7 +80,7 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
       map.get(key)!.push(f)
     }
     return Array.from(map.entries()).sort(([a], [b]) => a - b)
-  }, [fixtures])
+  }, [visibleFixtures])
 
   return (
     <div>
@@ -102,7 +113,7 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
         </div>
       )}
 
-      <div className="mb-3 flex">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex rounded-lg border border-gray-200 p-0.5 dark:border-white/10">
           <button
             onClick={() => setMode("group")}
@@ -127,6 +138,20 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
             Por fecha
           </button>
         </div>
+
+        <button
+          onClick={() => setHideFinished((v) => !v)}
+          aria-pressed={hideFinished}
+          className={cn(
+            "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+            hideFinished
+              ? "border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900"
+              : "border-gray-200 text-gray-500 hover:text-gray-700 dark:border-white/10 dark:text-neutral-400 dark:hover:text-neutral-200",
+          )}
+        >
+          {hideFinished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          Ocultar jugados
+        </button>
       </div>
 
       {mode === "group" ? (
