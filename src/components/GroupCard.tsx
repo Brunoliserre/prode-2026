@@ -50,6 +50,28 @@ function TeamFlag({ team }: { team: string }) {
 const inputCls =
   "w-10 rounded border border-gray-300 bg-white text-center text-sm font-semibold tabular-nums tracking-tight text-gray-900 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
 
+const AR_TZ = "America/Argentina/Buenos_Aires"
+
+// Fecha y hora de inicio del partido, en horario de Argentina (GMT-3).
+function Kickoff({ date, stacked }: { date: Date; stacked?: boolean }) {
+  const d = new Date(date)
+  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: AR_TZ })
+  if (stacked) {
+    const day = d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: AR_TZ })
+    return (
+      <span className="whitespace-nowrap text-xs font-medium tabular-nums text-gray-400 dark:text-neutral-500">
+        {day} · {time}
+      </span>
+    )
+  }
+  const day = d.toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: AR_TZ })
+  return (
+    <span className="whitespace-nowrap text-[11px] text-gray-400 dark:text-neutral-500">
+      <span className="capitalize">{day}</span> · {time}
+    </span>
+  )
+}
+
 export function GroupCard({ group, matches, predMap, userId, now: initialNow, emblemUrl, headerLabel, dateMode }: GroupCardProps) {
   const [open, setOpen] = useState(true)
   const [now, setNow] = useState(initialNow)
@@ -118,7 +140,10 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
               <div className="flex flex-col gap-2 px-3 py-2.5 sm:hidden">
                 {/* Top row: estado + pred/real/hora/guardar */}
                 <div className="flex items-start justify-between gap-2">
-                  <StatusBadge started={started} finished={finished} matchday={fixture.matchday} group={dateMode ? fixture.group : undefined} />
+                  <div className="flex items-center gap-2">
+                    <StatusBadge started={started} finished={finished} matchday={fixture.matchday} group={dateMode ? fixture.group : undefined} />
+                    {!started && !finished && <Kickoff date={fixture.matchDate} />}
+                  </div>
 
                   {canPredict ? (
                     <div className="flex items-center gap-1">
@@ -138,13 +163,6 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                       </button>
                       {inp.status === "error" && <span className="text-[10px] text-red-500">!</span>}
                     </div>
-                  ) : !started && !finished ? (
-                    <span className="whitespace-nowrap text-[11px] text-gray-300 dark:text-neutral-600">
-                      {new Date(fixture.matchDate).toLocaleTimeString("es-AR", {
-                        hour: "2-digit", minute: "2-digit",
-                        timeZone: "America/Argentina/Buenos_Aires",
-                      })}
-                    </span>
                   ) : prediction ? (
                     <div className="flex flex-col items-end gap-0.5">
                       <div className="flex items-center gap-1 whitespace-nowrap">
@@ -253,7 +271,7 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                 </div>
 
                 {/* Center */}
-                <div className="w-10 shrink-0 text-center sm:w-16">
+                <div className="w-10 shrink-0 text-center sm:w-28">
                   {finished ? (
                     <span className="text-sm font-bold text-gray-900 dark:text-white">{fixture.homeScore}–{fixture.awayScore}</span>
                   ) : started ? (
@@ -262,7 +280,7 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                       EN VIVO
                     </span>
                   ) : (
-                    <span className="text-xs text-gray-300 dark:text-neutral-700">vs</span>
+                    <Kickoff date={fixture.matchDate} stacked />
                   )}
                 </div>
 
@@ -308,13 +326,6 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                       </button>
                       {inp.status === "error" && <span className="text-[10px] text-red-500">!</span>}
                     </>
-                  ) : !started && !finished ? (
-                    <span className="text-[11px] text-gray-300 dark:text-neutral-600">
-                      {new Date(fixture.matchDate).toLocaleTimeString("es-AR", {
-                        hour: "2-digit", minute: "2-digit",
-                        timeZone: "America/Argentina/Buenos_Aires",
-                      })}
-                    </span>
                   ) : prediction ? (
                     <div className="flex flex-col items-end gap-0.5">
                       <div className="flex items-center gap-1">
@@ -349,7 +360,7 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                       botón quede centrado bajo "EN VIVO" en desktop. */}
                   <div className="hidden shrink-0 sm:block sm:w-11" />
                   <div className="hidden flex-1 sm:block" />
-                  <div className="flex flex-1 justify-center sm:w-16 sm:flex-none sm:shrink-0">
+                  <div className="flex flex-1 justify-center sm:w-28 sm:flex-none sm:shrink-0">
                     <MatchPredictionsModal
                       fixtureId={fixture.id}
                       homeTeam={fixture.homeTeam}

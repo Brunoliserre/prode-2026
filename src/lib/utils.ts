@@ -12,6 +12,7 @@ export function formatDate(date: Date | string): string {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
     timeZone: "America/Argentina/Buenos_Aires",
   })
 }
@@ -29,8 +30,8 @@ export const ENTRY_AMOUNT = 10_000
 export const TOURNAMENT_START = new Date("2026-06-11T00:00:00-05:00")
 
 export const PICK_POINTS: Record<string, number> = {
-  CHAMPION:   8,
-  RUNNER_UP:  5,
+  CHAMPION:   15,
+  RUNNER_UP:  13,
   MVP:        13,
   PICHICHI:   13,
   REVELATION: 10,

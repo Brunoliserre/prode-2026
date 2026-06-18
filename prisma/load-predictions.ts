@@ -102,6 +102,11 @@ const ALIASES: Record<string, string> = {
   curazao: "Curaçao", curacao: "Curaçao",
   qatar: "Qatar",
   haiti: "Haiti",
+  jordania: "Jordan", jordan: "Jordan",
+  congo: "Congo DR", "congo dr": "Congo DR", "rd congo": "Congo DR", "republica democratica del congo": "Congo DR",
+  chequia: "Czechia", "republica checa": "Czechia",
+  uzbekistan: "Uzbekistan",
+  bosnia: "Bosnia", "bosnia y herzegovina": "Bosnia",
   "cabo verde": "Cape Verde Islands", "cabo verde islas": "Cape Verde Islands", "islas de cabo verde": "Cape Verde Islands",
   "nueva zelanda": "New Zealand", "nueva zelandia": "New Zealand",
 }

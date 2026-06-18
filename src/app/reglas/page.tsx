@@ -104,7 +104,7 @@ export default function ReglasPage() {
         <div className="space-y-2">
           <SummaryRow label="Fase de Grupos (72 partidos)" value="hasta 504 pts" />
           <SummaryRow label="Fase Eliminatoria" value="Trabajando en ello" />
-          <SummaryRow label="Campeón + Subcampeón" value="hasta 13 pts" />
+          <SummaryRow label="Campeón + Subcampeón" value="hasta 28 pts" />
           <SummaryRow label="7 Premios Especiales" value="hasta 72 pts" />
           <div className="mt-3 rounded-xl bg-gray-900 px-4 py-3 dark:bg-white/5">
             <div className="flex items-center justify-between">

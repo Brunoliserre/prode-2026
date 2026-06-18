@@ -2,20 +2,22 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { ProfileForm } from "@/components/ProfileForm"
+import { JoinPozoButton } from "@/components/JoinPozoButton"
+import { ENTRY_AMOUNT } from "@/lib/utils"
 import { esTeamName } from "@/lib/flags"
 
 export const revalidate = 0
 
-const PICK_LABELS: Record<string, { label: string; icon: string; points: number }> = {
-  CHAMPION:   { label: "Campeón del Mundo", icon: "🏆", points: 15 },
-  RUNNER_UP:  { label: "Subcampeón",        icon: "🥈", points: 8  },
-  MVP:        { label: "MVP del Mundial",   icon: "🌟", points: 5  },
-  PICHICHI:   { label: "Pichichi",          icon: "👟", points: 5  },
-  REVELATION: { label: "Equipo Revelación", icon: "⭐", points: 3  },
-  FAIR_PLAY:  { label: "Premio Fair Play",  icon: "🤝", points: 3  },
-  RUSTICO:    { label: "Premio Rústico",    icon: "💥", points: 3  },
-  DESASTROSO: { label: "Premio Desastroso", icon: "🎯", points: 3  },
-  DECEPCION:  { label: "Premio Decepción",  icon: "😞", points: 3  },
+const PICK_LABELS: Record<string, { label: string; icon: string }> = {
+  CHAMPION:   { label: "Campeón del Mundo", icon: "🏆" },
+  RUNNER_UP:  { label: "Subcampeón",        icon: "🥈" },
+  MVP:        { label: "MVP del Mundial",   icon: "🌟" },
+  PICHICHI:   { label: "Pichichi",          icon: "👟" },
+  REVELATION: { label: "Equipo Revelación", icon: "⭐" },
+  FAIR_PLAY:  { label: "Premio Fair Play",  icon: "🤝" },
+  RUSTICO:    { label: "Premio Rústico",    icon: "💥" },
+  DESASTROSO: { label: "Premio Desastroso", icon: "🎯" },
+  DECEPCION:  { label: "Premio Decepción",  icon: "😞" },
 }
 
 export default async function ProfilePage() {
@@ -37,6 +39,9 @@ export default async function ProfilePage() {
     user.tournamentPicks.map((p) => [p.category, p])
   )
 
+  const paidCount = await prisma.user.count({ where: { hasPaid: true } })
+  const pozo = paidCount * ENTRY_AMOUNT
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
@@ -52,6 +57,24 @@ export default async function ProfilePage() {
           <Stat icon="🎯" value={pickPts} label="Pts de torneo" sublabel="predicciones generales" />
           <Stat icon="📋" value={played} label="Pronósticos" sublabel="partidos jugados" />
         </div>
+      </div>
+
+      {/* Pozo */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/5 dark:bg-neutral-900">
+        <div className="flex items-center gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 text-xl dark:bg-emerald-500/10">
+            💰
+          </span>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-500">
+              Pozo acumulado
+            </p>
+            <p className="text-2xl font-bold tabular-nums text-gray-900 dark:text-white">
+              $ {pozo.toLocaleString("es-AR")}
+            </p>
+          </div>
+        </div>
+        <JoinPozoButton hasPaid={user.hasPaid} wantsToJoin={user.wantsToJoin} />
       </div>
 
       {/* Two column layout */}
@@ -80,15 +103,11 @@ export default async function ProfilePage() {
                       {pick ? esTeamName(pick.value) : "Sin selección"}
                     </p>
                   </div>
-                  <div className="shrink-0">
-                    {pick && pick.points > 0 ? (
-                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-                        +{pick.points}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-300 dark:text-neutral-700">+{meta.points}</span>
-                    )}
-                  </div>
+                  {pick && pick.points > 0 && (
+                    <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                      +{pick.points}
+                    </span>
+                  )}
                 </div>
               )
             })}
