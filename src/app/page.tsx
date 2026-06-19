@@ -2,6 +2,8 @@ import { auth, signIn } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getWCEmblem } from "@/lib/competition"
 import { cn } from "@/lib/utils"
+import { ArrowUp, ArrowDown } from "lucide-react"
+import { RankHistoryChart, type RankSeries } from "@/components/RankHistoryChart"
 import Image from "next/image"
 
 export const revalidate = 0
@@ -67,27 +69,94 @@ async function LeaderboardPage() {
     orderBy: { name: "asc" },
   })
 
-  const rows = users
-    .map((u) => {
-      const pickPts = u.tournamentPicks.reduce((s, p) => s + p.points, 0)
-      const played  = u.predictions.length
+  // Última jornada con resultados: el ranking "anterior" excluye esta fecha,
+  // así las flechas reflejan cómo movió la tabla la fecha que se está jugando.
+  const finishedFx = await prisma.fixture.findMany({
+    where: { homeScore: { not: null }, awayScore: { not: null }, matchday: { not: null } },
+    orderBy: [{ matchDate: "asc" }, { id: "asc" }],
+    select: { id: true, matchday: true },
+  })
+  const maxFinishedMd = finishedFx.reduce((m, f) => Math.max(m, f.matchday!), 0)
+  // Sólo hay "fecha anterior" para comparar si ya se jugó más de una jornada.
+  const hasPrev = maxFinishedMd >= 2
 
-      // Desglose de los puntos de partidos:
-      //   Completos = pts de pronósticos con resultado exacto (pleno = 7 c/u)
-      //   Simples   = pts del resto de aciertos (signo correcto sin clavar, 4-6)
-      let simplePts = 0
-      let completosPts = 0
-      for (const p of u.predictions) {
-        if (p.fixture.homeScore == null || p.fixture.awayScore == null) continue
-        const pleno = p.homeScore === p.fixture.homeScore && p.awayScore === p.fixture.awayScore
-        if (pleno) completosPts += p.points
-        else simplePts += p.points
-      }
+  const base = users.map((u) => {
+    const pickPts = u.tournamentPicks.reduce((s, p) => s + p.points, 0)
+    const played  = u.predictions.length
 
-      const total = simplePts + completosPts + pickPts
-      return { id: u.id, name: u.name, image: u.image, total, simplePts, completosPts, pickPts, played }
-    })
+    // Desglose de los puntos de partidos:
+    //   Completos = pts de pronósticos con resultado exacto (pleno = 7 c/u)
+    //   Simples   = pts del resto de aciertos (signo correcto sin clavar, 4-6)
+    let simplePts = 0
+    let completosPts = 0
+    let prevMatchPts = 0 // puntos acumulados hasta la jornada anterior
+    for (const p of u.predictions) {
+      if (p.fixture.homeScore == null || p.fixture.awayScore == null) continue
+      const pleno = p.homeScore === p.fixture.homeScore && p.awayScore === p.fixture.awayScore
+      if (pleno) completosPts += p.points
+      else simplePts += p.points
+      if (p.fixture.matchday != null && p.fixture.matchday < maxFinishedMd) prevMatchPts += p.points
+    }
+
+    const total = simplePts + completosPts + pickPts
+    const prevTotal = prevMatchPts + pickPts
+    return { id: u.id, name: u.name, image: u.image, total, prevTotal, simplePts, completosPts, pickPts, played }
+  })
+
+  // Puesto en el ranking anterior (mismo criterio de desempate que el actual).
+  const prevRank = new Map<string, number>()
+  ;[...base]
+    .sort((a, b) => b.prevTotal - a.prevTotal || (a.name ?? "").localeCompare(b.name ?? ""))
+    .forEach((r, i) => prevRank.set(r.id, i))
+
+  const rows = [...base]
     .sort((a, b) => b.total - a.total || (a.name ?? "").localeCompare(b.name ?? ""))
+    .map((r, i) => ({ ...r, delta: hasPrev ? prevRank.get(r.id)! - i : null }))
+
+  // Evolución de posiciones, en dos granularidades:
+  //   · por fecha   → puesto al cierre de cada jornada jugada
+  //   · por partido → puesto después de cada partido finalizado (cronológico)
+  // Los puntos de torneo son estáticos, se incluyen en todos los snapshots.
+  const playedMds = [...new Set(finishedFx.map((f) => f.matchday!))].sort((a, b) => a - b)
+  const pickPtsById = new Map(
+    users.map((u) => [u.id, u.tournamentPicks.reduce((s, p) => s + p.points, 0)]),
+  )
+  const ptsByUserFix = new Map(
+    users.map((u) => [u.id, new Map(u.predictions.map((p) => [p.fixtureId, p.points]))]),
+  )
+  // Puesto de cada jugador contando sólo los fixtures dados (acumulado).
+  const standingsAt = (fixtureIds: Set<string>) => {
+    const pos = new Map<string, number>()
+    users
+      .map((u) => {
+        const fix = ptsByUserFix.get(u.id)!
+        let pts = pickPtsById.get(u.id)!
+        for (const fid of fixtureIds) pts += fix.get(fid) ?? 0
+        return { id: u.id, name: u.name, pts }
+      })
+      .sort((a, b) => b.pts - a.pts || (a.name ?? "").localeCompare(b.name ?? ""))
+      .forEach((s, i) => pos.set(s.id, i + 1))
+    return pos
+  }
+  const seriesFrom = (snaps: Map<string, number>[]): RankSeries[] =>
+    rows.map((r) => ({
+      id: r.id,
+      name: r.name ?? "Anónimo",
+      positions: snaps.map((s) => s.get(r.id)!),
+    }))
+
+  const fechaSnaps = playedMds.map((md) =>
+    standingsAt(new Set(finishedFx.filter((f) => f.matchday! <= md).map((f) => f.id))),
+  )
+  const counted = new Set<string>()
+  const partidoSnaps = finishedFx.map((f) => {
+    counted.add(f.id)
+    return standingsAt(counted)
+  })
+
+  const historyByFecha = { labels: playedMds.map((md) => `Fecha ${md}`), series: seriesFrom(fechaSnaps) }
+  const historyByPartido = { labels: finishedFx.map((_, i) => String(i + 1)), series: seriesFrom(partidoSnaps) }
+  const showHistory = finishedFx.length >= 2
 
   return (
     <div>
@@ -100,8 +169,9 @@ async function LeaderboardPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-100/50 text-left dark:border-white/5 dark:bg-neutral-800/50">
-                <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">#</th>
-                <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">Jugador</th>
+                <th className="py-3 pl-4 font-semibold text-gray-500 dark:text-neutral-400">#</th>
+                <th className="py-3 pr-2" />
+                <th className="py-3 pr-4 font-semibold text-gray-500 dark:text-neutral-400">Jugador</th>
                 <th className="px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400">Pts</th>
                 <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Simples</th>
                 <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Completos</th>
@@ -127,8 +197,9 @@ async function LeaderboardPage() {
                       medalRow[i] ?? "hover:bg-gray-50 dark:hover:bg-white/[0.03]",
                     )}
                   >
-                    <td className="px-4 py-3 font-mono text-gray-400 dark:text-neutral-500">{rankIcon}</td>
-                    <td className="px-4 py-3">
+                    <td className="py-3 pl-4 font-mono text-gray-400 dark:text-neutral-500">{rankIcon}</td>
+                    <td className="py-3 pr-2 text-center"><RankDelta delta={row.delta} /></td>
+                    <td className="py-3 pr-4">
                       <div className="flex items-center gap-2.5">
                         {row.image ? (
                           <Image src={row.image} alt={row.name ?? ""} width={28} height={28} className="rounded-full" />
@@ -152,6 +223,38 @@ async function LeaderboardPage() {
           </table>
         </div>
       )}
+
+      {showHistory && (
+        <RankHistoryChart byFecha={historyByFecha} byPartido={historyByPartido} players={rows.length} />
+      )}
     </div>
+  )
+}
+
+// Variación de puesto respecto del ranking de la jornada anterior.
+//   delta > 0 → subió (verde) · delta < 0 → bajó (rojo) · 0 → se mantiene (=)
+//   delta null → todavía no hay fecha anterior para comparar
+function RankDelta({ delta }: { delta: number | null }) {
+  if (delta == null) return null
+  if (delta === 0) {
+    return (
+      <span className="inline-flex items-center justify-center rounded-full bg-gray-200/80 px-1.5 py-0.5 text-xs font-bold text-gray-500 dark:bg-white/10 dark:text-neutral-300">
+        =
+      </span>
+    )
+  }
+  const up = delta > 0
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+        up
+          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          : "bg-red-500/10 text-red-500 dark:text-red-400",
+      )}
+    >
+      {up ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+      {Math.abs(delta)}
+    </span>
   )
 }
