@@ -69,19 +69,23 @@ async function LeaderboardPage() {
 
   const rows = users
     .map((u) => {
-      const matchPts = u.predictions.reduce((s, p) => s + p.points, 0)
-      const pickPts  = u.tournamentPicks.reduce((s, p) => s + p.points, 0)
-      const total    = matchPts + pickPts
-      const played   = u.predictions.length
-      // Plenos: pronósticos con resultado exacto (el partido ya tiene resultado)
-      const plenos   = u.predictions.filter(
-        (p) =>
-          p.fixture.homeScore != null &&
-          p.fixture.awayScore != null &&
-          p.homeScore === p.fixture.homeScore &&
-          p.awayScore === p.fixture.awayScore,
-      ).length
-      return { id: u.id, name: u.name, image: u.image, total, matchPts, pickPts, played, plenos }
+      const pickPts = u.tournamentPicks.reduce((s, p) => s + p.points, 0)
+      const played  = u.predictions.length
+
+      // Desglose de los puntos de partidos:
+      //   Completos = pts de pronósticos con resultado exacto (pleno = 7 c/u)
+      //   Simples   = pts del resto de aciertos (signo correcto sin clavar, 4-6)
+      let simplePts = 0
+      let completosPts = 0
+      for (const p of u.predictions) {
+        if (p.fixture.homeScore == null || p.fixture.awayScore == null) continue
+        const pleno = p.homeScore === p.fixture.homeScore && p.awayScore === p.fixture.awayScore
+        if (pleno) completosPts += p.points
+        else simplePts += p.points
+      }
+
+      const total = simplePts + completosPts + pickPts
+      return { id: u.id, name: u.name, image: u.image, total, simplePts, completosPts, pickPts, played }
     })
     .sort((a, b) => b.total - a.total || (a.name ?? "").localeCompare(b.name ?? ""))
 
@@ -99,10 +103,10 @@ async function LeaderboardPage() {
                 <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">#</th>
                 <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">Jugador</th>
                 <th className="px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400">Pts</th>
-                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Predicciones</th>
-                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Plenos</th>
+                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Simples</th>
+                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Completos</th>
                 <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Torneo</th>
-                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Pronósticos</th>
+                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Predicciones</th>
               </tr>
             </thead>
             <tbody>
@@ -137,8 +141,8 @@ async function LeaderboardPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">{row.total}</td>
-                    <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.matchPts}</td>
-                    <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.plenos}</td>
+                    <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.simplePts}</td>
+                    <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.completosPts}</td>
                     <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.pickPts}</td>
                     <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.played}</td>
                   </tr>
