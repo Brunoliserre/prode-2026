@@ -62,6 +62,7 @@ const ALIASES: Record<string, string> = {
   alemania: "Germany",
   senegal: "Senegal",
   noruega: "Norway",
+  suecia: "Sweden",
   irak: "Iraq", iraq: "Iraq",
   argentina: "Argentina",
   chile: "Chile",

@@ -69,62 +69,21 @@ async function LeaderboardPage() {
     orderBy: { name: "asc" },
   })
 
-  // Última jornada con resultados: el ranking "anterior" excluye esta fecha,
-  // así las flechas reflejan cómo movió la tabla la fecha que se está jugando.
+  // Partidos finalizados, en orden cronológico.
   const finishedFx = await prisma.fixture.findMany({
     where: { homeScore: { not: null }, awayScore: { not: null }, matchday: { not: null } },
     orderBy: [{ matchDate: "asc" }, { id: "asc" }],
     select: { id: true, matchday: true },
   })
-  const maxFinishedMd = finishedFx.reduce((m, f) => Math.max(m, f.matchday!), 0)
-  // Sólo hay "fecha anterior" para comparar si ya se jugó más de una jornada.
-  const hasPrev = maxFinishedMd >= 2
 
-  const base = users.map((u) => {
-    const pickPts = u.tournamentPicks.reduce((s, p) => s + p.points, 0)
-    const played  = u.predictions.length
-
-    // Desglose de los puntos de partidos:
-    //   Completos = pts de pronósticos con resultado exacto (pleno = 7 c/u)
-    //   Simples   = pts del resto de aciertos (signo correcto sin clavar, 4-6)
-    let simplePts = 0
-    let completosPts = 0
-    let prevMatchPts = 0 // puntos acumulados hasta la jornada anterior
-    for (const p of u.predictions) {
-      if (p.fixture.homeScore == null || p.fixture.awayScore == null) continue
-      const pleno = p.homeScore === p.fixture.homeScore && p.awayScore === p.fixture.awayScore
-      if (pleno) completosPts += p.points
-      else simplePts += p.points
-      if (p.fixture.matchday != null && p.fixture.matchday < maxFinishedMd) prevMatchPts += p.points
-    }
-
-    const total = simplePts + completosPts + pickPts
-    const prevTotal = prevMatchPts + pickPts
-    return { id: u.id, name: u.name, image: u.image, total, prevTotal, simplePts, completosPts, pickPts, played }
-  })
-
-  // Puesto en el ranking anterior (mismo criterio de desempate que el actual).
-  const prevRank = new Map<string, number>()
-  ;[...base]
-    .sort((a, b) => b.prevTotal - a.prevTotal || (a.name ?? "").localeCompare(b.name ?? ""))
-    .forEach((r, i) => prevRank.set(r.id, i))
-
-  const rows = [...base]
-    .sort((a, b) => b.total - a.total || (a.name ?? "").localeCompare(b.name ?? ""))
-    .map((r, i) => ({ ...r, delta: hasPrev ? prevRank.get(r.id)! - i : null }))
-
-  // Evolución de posiciones, en dos granularidades:
-  //   · por fecha   → puesto al cierre de cada jornada jugada
-  //   · por partido → puesto después de cada partido finalizado (cronológico)
-  // Los puntos de torneo son estáticos, se incluyen en todos los snapshots.
-  const playedMds = [...new Set(finishedFx.map((f) => f.matchday!))].sort((a, b) => a - b)
+  // Puntos de torneo (estáticos) y puntos de cada usuario por fixture.
   const pickPtsById = new Map(
     users.map((u) => [u.id, u.tournamentPicks.reduce((s, p) => s + p.points, 0)]),
   )
   const ptsByUserFix = new Map(
     users.map((u) => [u.id, new Map(u.predictions.map((p) => [p.fixtureId, p.points]))]),
   )
-  // Puesto de cada jugador contando sólo los fixtures dados (acumulado).
+  // Puesto (1-based) de cada jugador contando sólo los fixtures dados (acumulado).
   const standingsAt = (fixtureIds: Set<string>) => {
     const pos = new Map<string, number>()
     users
@@ -138,6 +97,42 @@ async function LeaderboardPage() {
       .forEach((s, i) => pos.set(s.id, i + 1))
     return pos
   }
+
+  // Variación de puesto: comparamos contra el ranking justo ANTES del último
+  // partido finalizado (partido a partido). Cada resultado nuevo mueve las flechas.
+  const hasPrev = finishedFx.length >= 2
+  const prevPos = hasPrev
+    ? standingsAt(new Set(finishedFx.slice(0, -1).map((f) => f.id)))
+    : null
+
+  const base = users.map((u) => {
+    const pickPts = pickPtsById.get(u.id)!
+    const played  = u.predictions.length
+
+    // Desglose de los puntos de partidos:
+    //   Completos = pts de pronósticos con resultado exacto (pleno = 7 c/u)
+    //   Simples   = pts del resto de aciertos (signo correcto sin clavar, 4-6)
+    let simplePts = 0
+    let completosPts = 0
+    for (const p of u.predictions) {
+      if (p.fixture.homeScore == null || p.fixture.awayScore == null) continue
+      const pleno = p.homeScore === p.fixture.homeScore && p.awayScore === p.fixture.awayScore
+      if (pleno) completosPts += p.points
+      else simplePts += p.points
+    }
+
+    const total = simplePts + completosPts + pickPts
+    return { id: u.id, name: u.name, image: u.image, total, simplePts, completosPts, pickPts, played }
+  })
+
+  const rows = [...base]
+    .sort((a, b) => b.total - a.total || (a.name ?? "").localeCompare(b.name ?? ""))
+    .map((r, i) => ({ ...r, delta: hasPrev ? prevPos!.get(r.id)! - (i + 1) : null }))
+
+  // Evolución de posiciones, en dos granularidades:
+  //   · por fecha   → puesto al cierre de cada jornada jugada
+  //   · por partido → puesto después de cada partido finalizado (cronológico)
+  const playedMds = [...new Set(finishedFx.map((f) => f.matchday!))].sort((a, b) => a - b)
   const seriesFrom = (snaps: Map<string, number>[]): RankSeries[] =>
     rows.map((r) => ({
       id: r.id,
@@ -231,9 +226,9 @@ async function LeaderboardPage() {
   )
 }
 
-// Variación de puesto respecto del ranking de la jornada anterior.
+// Variación de puesto respecto del ranking previo al último partido jugado.
 //   delta > 0 → subió (verde) · delta < 0 → bajó (rojo) · 0 → se mantiene (=)
-//   delta null → todavía no hay fecha anterior para comparar
+//   delta null → todavía no hay partido anterior para comparar
 function RankDelta({ delta }: { delta: number | null }) {
   if (delta == null) return null
   if (delta === 0) {
