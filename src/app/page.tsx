@@ -83,17 +83,43 @@ async function LeaderboardPage() {
   const ptsByUserFix = new Map(
     users.map((u) => [u.id, new Map(u.predictions.map((p) => [p.fixtureId, p.points]))]),
   )
+  // Fixtures que cada jugador clavó exacto (para el desempate por "completos").
+  const exactFixByUser = new Map(
+    users.map((u) => [
+      u.id,
+      new Set(
+        u.predictions
+          .filter(
+            (p) =>
+              p.fixture.homeScore != null &&
+              p.fixture.awayScore != null &&
+              p.homeScore === p.fixture.homeScore &&
+              p.awayScore === p.fixture.awayScore,
+          )
+          .map((p) => p.fixtureId),
+      ),
+    ]),
+  )
   // Puesto (1-based) de cada jugador contando sólo los fixtures dados (acumulado).
+  // Desempate: a igualdad de puntos, manda quien tenga más resultados exactos.
   const standingsAt = (fixtureIds: Set<string>) => {
     const pos = new Map<string, number>()
     users
       .map((u) => {
         const fix = ptsByUserFix.get(u.id)!
+        const ex = exactFixByUser.get(u.id)!
         let pts = pickPtsById.get(u.id)!
-        for (const fid of fixtureIds) pts += fix.get(fid) ?? 0
-        return { id: u.id, name: u.name, pts }
+        let exacts = 0
+        for (const fid of fixtureIds) {
+          pts += fix.get(fid) ?? 0
+          if (ex.has(fid)) exacts++
+        }
+        return { id: u.id, name: u.name, pts, exacts }
       })
-      .sort((a, b) => b.pts - a.pts || (a.name ?? "").localeCompare(b.name ?? ""))
+      .sort(
+        (a, b) =>
+          b.pts - a.pts || b.exacts - a.exacts || (a.name ?? "").localeCompare(b.name ?? ""),
+      )
       .forEach((s, i) => pos.set(s.id, i + 1))
     return pos
   }
@@ -126,7 +152,12 @@ async function LeaderboardPage() {
   })
 
   const rows = [...base]
-    .sort((a, b) => b.total - a.total || (a.name ?? "").localeCompare(b.name ?? ""))
+    .sort(
+      (a, b) =>
+        b.total - a.total ||
+        b.completosPts - a.completosPts ||
+        (a.name ?? "").localeCompare(b.name ?? ""),
+    )
     .map((r, i) => ({ ...r, delta: hasPrev ? prevPos!.get(r.id)! - (i + 1) : null }))
 
   // Evolución de posiciones, en dos granularidades:

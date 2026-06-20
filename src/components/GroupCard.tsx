@@ -52,19 +52,22 @@ const inputCls =
 
 const AR_TZ = "America/Argentina/Buenos_Aires"
 
-// Fecha y hora de inicio del partido, en horario de Argentina (GMT-3).
-function Kickoff({ date, stacked }: { date: Date; stacked?: boolean }) {
+// Fecha y hora de inicio del partido. Antes de montar usamos AR (igual que el
+// servidor, para no romper la hidratación); ya en el cliente, `mounted` pasa a
+// la zona horaria local de quien entra (timeZone undefined = zona del navegador).
+function Kickoff({ date, stacked, mounted }: { date: Date; stacked?: boolean; mounted?: boolean }) {
   const d = new Date(date)
-  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: AR_TZ })
+  const tz = mounted ? undefined : AR_TZ
+  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz })
   if (stacked) {
-    const day = d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: AR_TZ })
+    const day = d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: tz })
     return (
       <span className="whitespace-nowrap text-xs font-medium tabular-nums text-gray-400 dark:text-neutral-500">
         {day} · {time}
       </span>
     )
   }
-  const day = d.toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: AR_TZ })
+  const day = d.toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: tz })
   return (
     <span className="whitespace-nowrap text-[11px] text-gray-400 dark:text-neutral-500">
       <span className="capitalize">{day}</span> · {time}
@@ -75,8 +78,10 @@ function Kickoff({ date, stacked }: { date: Date; stacked?: boolean }) {
 export function GroupCard({ group, matches, predMap, userId, now: initialNow, emblemUrl, headerLabel, dateMode }: GroupCardProps) {
   const [open, setOpen] = useState(true)
   const [now, setNow] = useState(initialNow)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true) // ya en el cliente: formatear horarios en la zona local del visitante
     const id = setInterval(() => setNow(new Date()), 30_000)
     return () => clearInterval(id)
   }, [])
@@ -142,7 +147,7 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <StatusBadge started={started} finished={finished} matchday={fixture.matchday} group={dateMode ? fixture.group : undefined} />
-                    {!started && !finished && <Kickoff date={fixture.matchDate} />}
+                    {!started && !finished && <Kickoff date={fixture.matchDate} mounted={mounted} />}
                   </div>
 
                   {canPredict ? (
@@ -280,7 +285,7 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                       EN VIVO
                     </span>
                   ) : (
-                    <Kickoff date={fixture.matchDate} stacked />
+                    <Kickoff date={fixture.matchDate} stacked mounted={mounted} />
                   )}
                 </div>
 

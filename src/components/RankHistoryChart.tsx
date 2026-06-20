@@ -20,7 +20,7 @@ const COLORS = [
 ]
 
 export function RankHistoryChart({ byFecha, byPartido, players }: Props) {
-  const [mode, setMode] = useState<"fecha" | "partido">("fecha")
+  const [mode, setMode] = useState<"fecha" | "partido">("partido")
   const [active, setActive] = useState<string | null>(null)
 
   const { labels, series } = mode === "fecha" ? byFecha : byPartido
