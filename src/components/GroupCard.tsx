@@ -90,7 +90,8 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
     const init: Record<string, InputState> = {}
     for (const f of matches) {
       const p = predMap[f.id]
-      init[f.id] = { home: p != null ? String(p.homeScore) : "", away: p != null ? String(p.awayScore) : "", status: "idle", saving: false }
+      // Si ya hay pronóstico guardado, arranca en "ok" (botón verde "Guardado").
+      init[f.id] = { home: p != null ? String(p.homeScore) : "", away: p != null ? String(p.awayScore) : "", status: p != null ? "ok" : "idle", saving: false }
     }
     return init
   })
@@ -152,7 +153,6 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
 
                   {canPredict ? (
                     <div className="flex items-center gap-1">
-                      {inp.status === "ok" && <Save className="h-3 w-3 shrink-0 text-emerald-500 dark:text-emerald-400" />}
                       <button
                         onClick={() => save(fixture.id)}
                         disabled={inp.saving || inp.home === "" || inp.away === ""}
@@ -163,8 +163,8 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                             : "bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
                         )}
                       >
-                        {inp.saving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                        Guardar
+                        {inp.saving ? <Loader className="h-3 w-3 animate-spin" /> : inp.status === "ok" ? <Check className="h-3 w-3" /> : <Save className="h-3 w-3" />}
+                        {inp.saving ? "Guardando" : inp.status === "ok" ? "Guardado" : "Guardar"}
                       </button>
                       {inp.status === "error" && <span className="text-[10px] text-red-500">!</span>}
                     </div>
