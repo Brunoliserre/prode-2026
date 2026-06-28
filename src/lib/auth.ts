@@ -15,6 +15,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   session: { strategy: "jwt" },
   callbacks: {
+    // Los avatares se guardan como data URL base64 en la DB. Si esa imagen entra
+    // al JWT (token.picture), el cookie crece tanto que rompe con HTTP 431.
+    // La quitamos del token; la imagen se resuelve desde la DB en `session`.
+    async jwt({ token }) {
+      delete token.picture
+      return token
+    },
     async session({ session, token }) {
       if (!token.sub) return session
       session.user.id = token.sub
