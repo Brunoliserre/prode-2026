@@ -13,9 +13,22 @@ type Fixture = {
   matchDate: Date
   matchday: number | null
   group: string | null
+  stage: string | null
   homeScore: number | null
   awayScore: number | null
 }
+
+// Rondas de eliminatorias: orden y etiqueta corta.
+const KO_STAGES = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "THIRD_PLACE", "FINAL"] as const
+const KO_LABEL: Record<string, string> = {
+  LAST_32: "16vos",
+  LAST_16: "8vos",
+  QUARTER_FINALS: "4tos",
+  SEMI_FINALS: "Semis",
+  THIRD_PLACE: "3er puesto",
+  FINAL: "Final",
+}
+const isKnockout = (f: Fixture) => !!f.stage && f.stage !== "GROUP_STAGE"
 
 type Prediction = { homeScore: number; awayScore: number; points: number }
 
@@ -51,9 +64,26 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
       .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())
   }, [visibleFixtures, now])
 
+  // Fase de grupos vs eliminatorias.
+  const groupFixtures = useMemo(() => visibleFixtures.filter((f) => !isKnockout(f)), [visibleFixtures])
+  const koFixtures = useMemo(() => visibleFixtures.filter(isKnockout), [visibleFixtures])
+
+  // Eliminatorias agrupadas por ronda, en orden (solo rondas con partidos).
+  const byStage = useMemo(() => {
+    const map = new Map<string, Fixture[]>()
+    for (const f of koFixtures) {
+      const key = f.stage!
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(f)
+    }
+    for (const list of map.values())
+      list.sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())
+    return KO_STAGES.filter((s) => map.has(s)).map((s) => [s, map.get(s)!] as const)
+  }, [koFixtures])
+
   const byGroup = useMemo(() => {
     const map = new Map<string, Fixture[]>()
-    const sorted = [...visibleFixtures].sort(
+    const sorted = [...groupFixtures].sort(
       (a, b) =>
         (a.group ?? "").localeCompare(b.group ?? "") ||
         (a.matchday ?? 0) - (b.matchday ?? 0) ||
@@ -65,11 +95,11 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
       map.get(key)!.push(f)
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
-  }, [visibleFixtures])
+  }, [groupFixtures])
 
   const byDate = useMemo(() => {
     const map = new Map<number, Fixture[]>()
-    const sorted = [...visibleFixtures].sort(
+    const sorted = [...groupFixtures].sort(
       (a, b) =>
         (a.matchday ?? 0) - (b.matchday ?? 0) ||
         new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime(),
@@ -80,7 +110,7 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
       map.get(key)!.push(f)
     }
     return Array.from(map.entries()).sort(([a], [b]) => a - b)
-  }, [visibleFixtures])
+  }, [groupFixtures])
 
   return (
     <div>
@@ -154,8 +184,36 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
         </button>
       </div>
 
+      {/* Eliminatorias (arriba, abierta) */}
+      {byStage.length > 0 && (
+        <div className="mb-3">
+          <GroupsSection
+            title="Eliminatorias"
+            count={byStage.length}
+            emblemUrl={emblemUrl}
+            subtitle={byStage.map(([s]) => KO_LABEL[s]).join(" · ")}
+            defaultOpen
+          >
+            {byStage.map(([stage, matches]) => (
+              <GroupCard
+                key={stage}
+                group={stage}
+                headerLabel={KO_LABEL[stage]}
+                dateMode
+                matches={matches}
+                predMap={predMap}
+                userId={userId}
+                emblemUrl={emblemUrl}
+                now={now}
+              />
+            ))}
+          </GroupsSection>
+        </div>
+      )}
+
+      {/* Fase de grupos (cerrada por defecto) */}
       {mode === "group" ? (
-        <GroupsSection count={byGroup.length} emblemUrl={emblemUrl} subtitle={`${byGroup.length} grupos`}>
+        <GroupsSection count={byGroup.length} emblemUrl={emblemUrl} subtitle={`${byGroup.length} grupos`} defaultOpen={false}>
           {byGroup.map(([group, matches]) => (
             <GroupCard
               key={group}
@@ -169,7 +227,7 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
           ))}
         </GroupsSection>
       ) : (
-        <GroupsSection count={byDate.length} emblemUrl={emblemUrl} subtitle={`${byDate.length} fechas`}>
+        <GroupsSection count={byDate.length} emblemUrl={emblemUrl} subtitle={`${byDate.length} fechas`} defaultOpen={false}>
           {byDate.map(([matchday, matches]) => (
             <GroupCard
               key={matchday}
