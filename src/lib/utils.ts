@@ -23,6 +23,16 @@ export function matchResult(home: number, away: number): "home" | "away" | "draw
   return "draw"
 }
 
+// Color del rating de un jugador (estilo FotMob, escala 1–10) para el dream team.
+//   <3 rojo · 3–5.9 naranja · 6–6.9 amarillo · 7–8.9 verde suave · 9–10 verde oscuro
+export function ratingColor(rating: number): string {
+  if (rating < 3) return "bg-red-500/10 text-red-600 dark:text-red-400"
+  if (rating < 6) return "bg-orange-500/10 text-orange-600 dark:text-orange-400"
+  if (rating < 7) return "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+  if (rating < 9) return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+  return "bg-emerald-600 text-white dark:bg-emerald-600 dark:text-white"
+}
+
 // Entry fee per participant (ARS) — the pozo is ENTRY_AMOUNT × paid users
 export const ENTRY_AMOUNT = 10_000
 
