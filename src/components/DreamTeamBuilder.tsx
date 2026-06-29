@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
-import { Check, Loader, Lock, Trash2 } from "lucide-react"
+import { Check, Loader, Lock, Search, Trash2, X } from "lucide-react"
 import { cn, ratingColor } from "@/lib/utils"
 import { esTeamName } from "@/lib/flags"
 import { FORMATIONS, type Formation, type Pos, lineCounts, POS_LABEL } from "@/lib/formations"
@@ -34,11 +34,22 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
     return init
   })
   const [team, setTeam] = useState<string>(TEAMS[0])
+  const [query, setQuery] = useState("")
   const [saved, setSaved] = useState(true)
   const [isSaving, startSaving] = useTransition()
 
   const counts = lineCounts(formation)
   const squad = useMemo(() => squadFor(team), [team])
+
+  // Buscador de jugadores en todos los equipos (por nombre o selección, sin acentos).
+  const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+  const allPlayers = useMemo(() => [...PLAYER_BY_ID.values()], [])
+  const searching = query.trim().length >= 2
+  const results = useMemo(() => {
+    if (!searching) return []
+    const q = norm(query.trim())
+    return allPlayers.filter((p) => norm(p.name).includes(q) || norm(p.club).includes(q)).slice(0, 60)
+  }, [query, searching, allPlayers])
   const pickedIds = new Set(Object.values(picks).map((p) => p.id))
   const filled = Object.keys(picks).length
   const total = Object.values(picks).reduce((s, p) => s + (p.rating ?? 0), 0)
@@ -223,6 +234,66 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
       {/* Cancha */}
       <DreamTeamPitch formation={formation} picks={picks} onRemove={removeSlot} onMove={move} isLocked={isLocked} />
 
+      {/* Buscador */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-neutral-500" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar jugador o selección…"
+          className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-8 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-600"
+        />
+        {query && (
+          <button
+            onClick={() => setQuery("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-neutral-200"
+            aria-label="Limpiar búsqueda"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {searching ? (
+        /* Resultados de la búsqueda (todos los equipos) */
+        <div className="rounded-xl border border-gray-200 bg-white p-2 dark:border-white/5 dark:bg-neutral-900">
+          {results.length === 0 ? (
+            <p className="px-2 py-6 text-center text-sm text-gray-400 dark:text-neutral-500">
+              Sin resultados para “{query.trim()}”.
+            </p>
+          ) : (
+            <div className="max-h-80 space-y-1 overflow-y-auto">
+              {results.map((p) => {
+                const picked = pickedIds.has(p.id)
+                const lockedP = locked.has(teamOf(p))
+                const disabled = picked || posFull(p.position) || lockedP
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => assign(p)}
+                    disabled={disabled}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                      picked
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                        : disabled
+                          ? "cursor-not-allowed text-gray-300 dark:text-neutral-600"
+                          : "text-gray-700 hover:bg-gray-100 dark:text-neutral-200 dark:hover:bg-white/5",
+                    )}
+                  >
+                    <span className="min-w-0 truncate">{p.name}</span>
+                    <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-gray-400 dark:text-neutral-500">
+                      {lockedP && <Lock className="h-3 w-3 text-amber-500" />}
+                      {p.club} · {POS_LABEL[p.position]}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
       {/* Selector de equipo */}
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-500">
@@ -297,6 +368,8 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
           </div>
         ))}
       </div>
+        </>
+      )}
     </div>
   )
 }
