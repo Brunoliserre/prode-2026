@@ -4,6 +4,8 @@ import { getWCEmblem } from "@/lib/competition"
 import { cn } from "@/lib/utils"
 import { ArrowUp, ArrowDown } from "lucide-react"
 import { RankHistoryChart, type RankSeries } from "@/components/RankHistoryChart"
+import { DreamTeamModal } from "@/components/DreamTeamModal"
+import { dreamTeamPointsByUser } from "@/lib/dreamteam-scoring"
 import Image from "next/image"
 
 export const revalidate = 0
@@ -80,6 +82,12 @@ async function LeaderboardPage() {
   const pickPtsById = new Map(
     users.map((u) => [u.id, u.tournamentPicks.reduce((s, p) => s + p.points, 0)]),
   )
+  // Puntos del dream team (por posición en cada ronda puntuada).
+  const dtPtsById = await dreamTeamPointsByUser()
+  // "Estáticos" = torneo + dream team: no dependen del partido a partido.
+  const staticById = new Map(
+    users.map((u) => [u.id, (pickPtsById.get(u.id) ?? 0) + (dtPtsById.get(u.id) ?? 0)]),
+  )
   const ptsByUserFix = new Map(
     users.map((u) => [u.id, new Map(u.predictions.map((p) => [p.fixtureId, p.points]))]),
   )
@@ -108,7 +116,7 @@ async function LeaderboardPage() {
       .map((u) => {
         const fix = ptsByUserFix.get(u.id)!
         const ex = exactFixByUser.get(u.id)!
-        let pts = pickPtsById.get(u.id)!
+        let pts = staticById.get(u.id)!
         let exacts = 0
         for (const fid of fixtureIds) {
           pts += fix.get(fid) ?? 0
@@ -133,6 +141,7 @@ async function LeaderboardPage() {
 
   const base = users.map((u) => {
     const pickPts = pickPtsById.get(u.id)!
+    const dtPts = dtPtsById.get(u.id) ?? 0
     const played  = u.predictions.length
 
     // Desglose de los puntos de partidos:
@@ -147,8 +156,8 @@ async function LeaderboardPage() {
       else simplePts += p.points
     }
 
-    const total = simplePts + completosPts + pickPts
-    return { id: u.id, name: u.name, image: u.image, total, simplePts, completosPts, pickPts, played }
+    const total = simplePts + completosPts + pickPts + dtPts
+    return { id: u.id, name: u.name, image: u.image, total, simplePts, completosPts, pickPts, dtPts, played }
   })
 
   const rows = [...base]
@@ -186,6 +195,7 @@ async function LeaderboardPage() {
 
   return (
     <div>
+      <DreamTeamModal />
       <h1 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white">Tabla de Posiciones</h1>
 
       {rows.length === 0 ? (
@@ -202,6 +212,7 @@ async function LeaderboardPage() {
                 <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Simples</th>
                 <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Completos</th>
                 <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Torneo</th>
+                <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Dream Team</th>
                 <th className="hidden px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400 sm:table-cell">Predicciones</th>
               </tr>
             </thead>
@@ -241,6 +252,7 @@ async function LeaderboardPage() {
                     <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.simplePts}</td>
                     <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.completosPts}</td>
                     <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.pickPts}</td>
+                    <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.dtPts}</td>
                     <td className="hidden px-4 py-3 text-center text-gray-500 dark:text-neutral-400 sm:table-cell">{row.played}</td>
                   </tr>
                 )

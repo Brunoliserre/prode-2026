@@ -8,6 +8,10 @@ import { DeleteUserForm } from "@/components/DeleteUserForm"
 import { EmailAdmin } from "@/components/EmailAdmin"
 import { UserTournamentPicksAdmin } from "@/components/UserTournamentPicksAdmin"
 import { PaidUsersAdmin } from "@/components/PaidUsersAdmin"
+import { DreamTeamScoringAdmin, type ScoringPlayer } from "@/components/DreamTeamScoringAdmin"
+import { currentRound, KO_LABEL } from "@/lib/dreamteam-scoring"
+import { PLAYER_BY_ID } from "@/lib/dreamteam-mock"
+import type { Pos } from "@/lib/formations"
 import { ALL_TEAMS } from "@/lib/flags"
 
 export const revalidate = 0
@@ -40,6 +44,28 @@ export default async function AdminPage() {
     image: u.image,
     picks: picksByUser.get(u.id) ?? {},
   }))
+
+  // Dream team: jugadores elegidos por alguien en la ronda activa + sus ratings.
+  const dtRound = await currentRound()
+  const dtRoundLabel = KO_LABEL[dtRound] ?? dtRound
+  const dtTeams = await prisma.dreamTeam.findMany({ where: { round: dtRound }, include: { picks: true } })
+  const dtScores = await prisma.playerScore.findMany({ where: { round: dtRound } })
+  const ratingOf = new Map(dtScores.map((s) => [s.playerId, s.rating]))
+  const countOf = new Map<string, number>()
+  for (const t of dtTeams) for (const p of t.picks) countOf.set(p.playerId, (countOf.get(p.playerId) ?? 0) + 1)
+  const dtPlayers: ScoringPlayer[] = [...countOf.keys()]
+    .map((playerId) => {
+      const pl = PLAYER_BY_ID.get(playerId)
+      return {
+        playerId,
+        name: pl?.name ?? playerId,
+        club: pl?.club ?? "",
+        position: (pl?.position ?? "MED") as Pos,
+        count: countOf.get(playerId)!,
+        rating: ratingOf.get(playerId) ?? null,
+      }
+    })
+    .sort((a, b) => b.count - a.count || a.club.localeCompare(b.club) || a.name.localeCompare(b.name))
 
   return (
     <div className="space-y-8">
@@ -81,6 +107,15 @@ export default async function AdminPage() {
           Usá el lápiz para cargar o corregir los picks de quien se olvidó de completarlos.
         </p>
         <UserTournamentPicksAdmin users={usersWithPicks} teams={ALL_TEAMS} />
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">
+        <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-white">Dream Team · ratings ({dtRoundLabel})</h2>
+        <p className="mb-4 text-sm text-gray-400 dark:text-neutral-500">
+          Jugadores elegidos por los participantes en esta ronda. Cargá el rating de FotMob (1-10) de cada uno;
+          la suma define el ranking del dream team, que se suma al total.
+        </p>
+        <DreamTeamScoringAdmin round={dtRound} roundLabel={dtRoundLabel} players={dtPlayers} />
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">

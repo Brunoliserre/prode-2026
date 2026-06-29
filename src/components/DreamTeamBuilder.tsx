@@ -1,65 +1,106 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useTransition } from "react"
+import { Check, Loader, Lock } from "lucide-react"
 import { cn, ratingColor } from "@/lib/utils"
+import { esTeamName } from "@/lib/flags"
 import { FORMATIONS, type Formation, type Pos, lineCounts, POS_LABEL } from "@/lib/formations"
-import { TEAMS, squadFor } from "@/lib/dreamteam-mock"
+import { TEAMS, squadFor, PLAYER_BY_ID } from "@/lib/dreamteam-mock"
+import { saveDreamTeam } from "@/lib/actions"
 import { DreamTeamPitch, type PitchPlayer } from "./DreamTeamPitch"
 
 const POS_ORDER: Pos[] = ["GK", "DEF", "MED", "FWD"]
+const teamOf = (p: PitchPlayer) => p.id.slice(0, p.id.lastIndexOf("-"))
 
-function remap(prev: Record<string, PitchPlayer>, f: Formation): Record<string, PitchPlayer> {
-  const counts = lineCounts(f)
-  const next: Record<string, PitchPlayer> = {}
-  for (const pos of POS_ORDER) {
-    const kept: PitchPlayer[] = []
-    for (let i = 0; i < 12; i++) {
-      const p = prev[`${pos}${i}`]
-      if (p) kept.push(p)
-    }
-    kept.slice(0, counts[pos]).forEach((p, i) => (next[`${pos}${i}`] = p))
-  }
-  return next
+interface Props {
+  round: string
+  roundLabel: string
+  initialFormation: Formation | null
+  initialPicks: Record<string, string> // slot → playerId
+  lockedTeams: string[]
 }
 
-export function DreamTeamBuilder() {
-  const [formation, setFormation] = useState<Formation>("3-1-2")
-  const [picks, setPicks] = useState<Record<string, PitchPlayer>>({})
+export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialPicks, lockedTeams }: Props) {
+  const locked = useMemo(() => new Set(lockedTeams), [lockedTeams])
+  const isLocked = (p: PitchPlayer) => locked.has(teamOf(p))
+
+  const [formation, setFormation] = useState<Formation>(initialFormation ?? "3-1-2")
+  const [picks, setPicks] = useState<Record<string, PitchPlayer>>(() => {
+    const init: Record<string, PitchPlayer> = {}
+    for (const [slot, pid] of Object.entries(initialPicks)) {
+      const p = PLAYER_BY_ID.get(pid)
+      if (p) init[slot] = p
+    }
+    return init
+  })
   const [team, setTeam] = useState<string>(TEAMS[0])
+  const [saved, setSaved] = useState(true)
+  const [isSaving, startSaving] = useTransition()
 
   const counts = lineCounts(formation)
   const squad = useMemo(() => squadFor(team), [team])
   const pickedIds = new Set(Object.values(picks).map((p) => p.id))
   const filled = Object.keys(picks).length
   const total = Object.values(picks).reduce((s, p) => s + (p.rating ?? 0), 0)
+  const dirty = () => setSaved(false)
+
+  // Cantidad de jugadores bloqueados por posición (para validar formaciones).
+  const lockedCount = useMemo(() => {
+    const c: Record<Pos, number> = { GK: 0, DEF: 0, MED: 0, FWD: 0 }
+    for (const [slot, p] of Object.entries(picks))
+      if (isLocked(p)) c[slot.replace(/\d+$/, "") as Pos]++
+    return c
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picks, locked])
+
+  const formationFits = (f: Formation) => {
+    const c = lineCounts(f)
+    return POS_ORDER.every((pos) => lockedCount[pos] <= c[pos])
+  }
 
   function changeFormation(f: Formation) {
+    if (!formationFits(f)) return
+    const c = lineCounts(f)
+    setPicks((prev) => {
+      const next: Record<string, PitchPlayer> = {}
+      for (const pos of POS_ORDER) {
+        const all: PitchPlayer[] = []
+        for (let i = 0; i < 12; i++) if (prev[`${pos}${i}`]) all.push(prev[`${pos}${i}`])
+        // Los bloqueados primero, para no descartarlos al achicar la línea.
+        const ordered = [...all.filter(isLocked), ...all.filter((p) => !isLocked(p))]
+        ordered.slice(0, c[pos]).forEach((p, i) => (next[`${pos}${i}`] = p))
+      }
+      return next
+    })
     setFormation(f)
-    setPicks((prev) => remap(prev, f))
+    dirty()
   }
 
   function assign(p: PitchPlayer) {
-    if (pickedIds.has(p.id)) return
+    if (pickedIds.has(p.id) || isLocked(p)) return
     for (let i = 0; i < counts[p.position]; i++) {
       const k = `${p.position}${i}`
       if (!picks[k]) {
         setPicks((prev) => ({ ...prev, [k]: p }))
+        dirty()
         return
       }
     }
   }
 
   function removeSlot(k: string) {
+    if (picks[k] && isLocked(picks[k])) return
     setPicks((prev) => {
       const n = { ...prev }
       delete n[k]
       return n
     })
+    dirty()
   }
 
-  // Swap entre dos slots (la cancha solo permite soltar en la misma posición).
   function move(fromKey: string, toKey: string) {
     if (fromKey === toKey) return
+    if ((picks[fromKey] && isLocked(picks[fromKey])) || (picks[toKey] && isLocked(picks[toKey]))) return
     setPicks((prev) => {
       const n = { ...prev }
       const a = n[fromKey]
@@ -70,6 +111,7 @@ export function DreamTeamBuilder() {
       else delete n[toKey]
       return n
     })
+    dirty()
   }
 
   function posFull(pos: Pos) {
@@ -78,41 +120,82 @@ export function DreamTeamBuilder() {
     return c >= counts[pos]
   }
 
+  function save() {
+    const data = Object.entries(picks).map(([slot, p]) => ({ slot, playerId: p.id }))
+    startSaving(async () => {
+      try {
+        await saveDreamTeam(round, formation, data)
+        setSaved(true)
+      } catch {
+        setSaved(false)
+      }
+    })
+  }
+
+  const complete = filled === 7
+  const teamLocked = locked.has(team)
+
   return (
     <div className="space-y-5">
-      {/* Header: formación + stats */}
+      {/* Header: formación + acciones */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-500">
             Formación
           </span>
-          {FORMATIONS.map((f) => (
-            <button
-              key={f}
-              onClick={() => changeFormation(f)}
-              className={cn(
-                "rounded-lg px-2.5 py-1 text-sm font-semibold tabular-nums transition-colors",
-                formation === f
-                  ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-                  : "bg-gray-100 text-gray-500 hover:text-gray-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200",
-              )}
-            >
-              {f}
-            </button>
-          ))}
+          {FORMATIONS.map((f) => {
+            const fits = formationFits(f)
+            return (
+              <button
+                key={f}
+                onClick={() => changeFormation(f)}
+                disabled={!fits}
+                title={!fits ? "No entra con los jugadores ya bloqueados" : undefined}
+                className={cn(
+                  "rounded-lg px-2.5 py-1 text-sm font-semibold tabular-nums transition-colors disabled:opacity-30",
+                  formation === f
+                    ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                    : "bg-gray-100 text-gray-500 hover:text-gray-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200",
+                )}
+              >
+                {f}
+              </button>
+            )
+          })}
         </div>
         <div className="flex items-center gap-3 text-sm">
+          {total > 0 && (
+            <span className="rounded-lg bg-emerald-100 px-2.5 py-1 font-bold tabular-nums text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+              {total.toFixed(1)} pts
+            </span>
+          )}
           <span className="text-gray-500 dark:text-neutral-400">
             <span className="font-bold text-gray-900 dark:text-white">{filled}</span>/7
           </span>
-          <span className="rounded-lg bg-emerald-100 px-2.5 py-1 font-bold tabular-nums text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-            {total.toFixed(1)} pts
-          </span>
+          <button
+            onClick={save}
+            disabled={!complete || isSaving || saved}
+            className={cn(
+              "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed",
+              saved
+                ? "bg-emerald-100 text-emerald-600 disabled:opacity-100 dark:bg-emerald-500/10 dark:text-emerald-400"
+                : "bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-40",
+            )}
+          >
+            {isSaving ? <Loader className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : null}
+            {isSaving ? "Guardando" : saved ? "Guardado" : "Guardar equipo"}
+          </button>
         </div>
       </div>
 
+      {!complete && (
+        <p className="-mt-2 text-xs text-gray-400 dark:text-neutral-500">
+          Completá los 7 jugadores para guardar tu equipo de {roundLabel}.
+        </p>
+      )}
+
       {/* Cancha */}
-      <DreamTeamPitch formation={formation} picks={picks} onRemove={removeSlot} onMove={move} />
+      <DreamTeamPitch formation={formation} picks={picks} onRemove={removeSlot} onMove={move} isLocked={isLocked} />
 
       {/* Selector de equipo */}
       <div>
@@ -125,19 +208,25 @@ export function DreamTeamBuilder() {
               key={t}
               onClick={() => setTeam(t)}
               className={cn(
-                "whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+                "flex items-center gap-1 whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
                 team === t
                   ? "border-gray-900 bg-gray-900 text-white dark:border-white dark:bg-white dark:text-gray-900"
                   : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-white/10 dark:text-neutral-300 dark:hover:bg-white/5",
               )}
             >
-              {t}
+              {locked.has(t) && <Lock className="h-3 w-3 text-amber-500" />}
+              {esTeamName(t)}
             </button>
           ))}
         </div>
       </div>
 
       {/* Pool de jugadores del equipo */}
+      {teamLocked && (
+        <p className="-mb-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+          <Lock className="h-3.5 w-3.5" /> {esTeamName(team)} ya juega — sus jugadores están bloqueados.
+        </p>
+      )}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {POS_ORDER.map((pos) => (
           <div key={pos} className="rounded-xl border border-gray-200 bg-white p-3 dark:border-white/5 dark:bg-neutral-900">
@@ -154,8 +243,7 @@ export function DreamTeamBuilder() {
                 .filter((p) => p.position === pos)
                 .map((p) => {
                   const picked = pickedIds.has(p.id)
-                  const full = posFull(pos)
-                  const disabled = picked || full
+                  const disabled = picked || posFull(pos) || teamLocked
                   return (
                     <button
                       key={p.id}
@@ -165,7 +253,7 @@ export function DreamTeamBuilder() {
                         "flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
                         picked
                           ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
-                          : full
+                          : disabled
                             ? "cursor-not-allowed text-gray-300 dark:text-neutral-600"
                             : "text-gray-700 hover:bg-gray-100 dark:text-neutral-200 dark:hover:bg-white/5",
                       )}

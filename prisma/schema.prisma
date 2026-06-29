@@ -18,6 +18,7 @@ model User {
   wantsToJoin     Boolean          @default(false)
   predictions     Prediction[]
   tournamentPicks TournamentPick[]
+  dreamTeams      DreamTeam[]
   accounts        Account[]
   sessions        Session[]
 }
@@ -92,4 +93,36 @@ model TournamentPick {
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, category])
+}
+
+// Dream team de eliminatorias: 1 por usuario por ronda (LAST_32, LAST_16, ...).
+model DreamTeam {
+  id        String          @id @default(cuid())
+  userId    String
+  round     String // LAST_32 | LAST_16 | QUARTER_FINALS | SEMI_FINALS | THIRD_PLACE | FINAL
+  formation String // "3-1-2", etc.
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  picks     DreamTeamPick[]
+
+  @@unique([userId, round])
+}
+
+model DreamTeamPick {
+  id          String    @id @default(cuid())
+  dreamTeamId String
+  slot        String // "GK0", "DEF0", "MED1", "FWD2", ...
+  playerId    String // "<Team>-<apiFootballId>"
+  dreamTeam   DreamTeam @relation(fields: [dreamTeamId], references: [id], onDelete: Cascade)
+
+  @@unique([dreamTeamId, slot])
+}
+
+// Rating de FotMob (1-10) de un jugador en una ronda. Lo carga el admin a mano.
+model PlayerScore {
+  id       String @id @default(cuid())
+  round    String
+  playerId String // "<Team>-<apiFootballId>"
+  rating   Float
+
+  @@unique([round, playerId])
 }

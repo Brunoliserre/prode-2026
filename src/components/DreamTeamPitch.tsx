@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { User, X } from "lucide-react"
-import { cn, ratingColor } from "@/lib/utils"
+import { Lock, User, X } from "lucide-react"
+import { cn, ratingTextColor } from "@/lib/utils"
 import { type Formation, type Pos, lineCounts, POS_LABEL } from "@/lib/formations"
 
 export type PitchPlayer = {
@@ -18,12 +18,15 @@ export type PitchPlayer = {
 const LINE_X: Record<Pos, number> = { GK: 9, DEF: 33, MED: 56, FWD: 80 }
 const LINE_ORDER: Pos[] = ["GK", "DEF", "MED", "FWD"]
 
-function Head({ p, onRemove }: { p: PitchPlayer; onRemove?: () => void }) {
+function Head({ p, onRemove, locked }: { p: PitchPlayer; onRemove?: () => void; locked?: boolean }) {
   const [err, setErr] = useState(false)
   return (
     <div className="group flex w-20 flex-col items-center gap-1">
       <div className="relative">
-        <div className="h-12 w-12 overflow-hidden rounded-full border-2 border-white bg-gray-200 shadow-md dark:bg-neutral-700">
+        <div className={cn(
+          "h-12 w-12 overflow-hidden rounded-full border-2 bg-gray-200 shadow-md dark:bg-neutral-700",
+          locked ? "border-amber-400" : "border-white",
+        )}>
           {p.photoUrl && !err ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={p.photoUrl} alt={p.name} className="h-full w-full object-cover" onError={() => setErr(true)} />
@@ -33,7 +36,11 @@ function Head({ p, onRemove }: { p: PitchPlayer; onRemove?: () => void }) {
             </div>
           )}
         </div>
-        {onRemove && (
+        {locked ? (
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-white shadow" title="Bloqueado: el partido ya empezó">
+            <Lock className="h-2.5 w-2.5" />
+          </span>
+        ) : onRemove ? (
           <button
             onClick={onRemove}
             className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white opacity-0 shadow transition-opacity group-hover:opacity-100"
@@ -41,14 +48,14 @@ function Head({ p, onRemove }: { p: PitchPlayer; onRemove?: () => void }) {
           >
             <X className="h-2.5 w-2.5" />
           </button>
-        )}
+        ) : null}
       </div>
       <div className="max-w-[5.5rem] rounded bg-black/55 px-1.5 py-0.5 text-center leading-tight backdrop-blur-sm">
         <p className="truncate text-[11px] font-semibold text-white">{p.name}</p>
         <p className="truncate text-[9px] text-white/70">{p.club}</p>
       </div>
       {p.rating != null && (
-        <span className={cn("rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums", ratingColor(p.rating))}>
+        <span className={cn("rounded bg-white px-1.5 py-0.5 text-[11px] font-bold tabular-nums shadow-sm", ratingTextColor(p.rating))}>
           {p.rating.toFixed(1)}
         </span>
       )}
@@ -79,9 +86,10 @@ interface Props {
   onSlotClick?: (slotKey: string, pos: Pos) => void
   onRemove?: (slotKey: string) => void
   onMove?: (fromKey: string, toKey: string) => void
+  isLocked?: (p: PitchPlayer) => boolean
 }
 
-export function DreamTeamPitch({ formation, picks, onSlotClick, onRemove, onMove }: Props) {
+export function DreamTeamPitch({ formation, picks, onSlotClick, onRemove, onMove, isLocked }: Props) {
   const counts = lineCounts(formation)
   const [dragKey, setDragKey] = useState<string | null>(null)
   // La posición se infiere del slotKey (ej. "FWD0" → "FWD"); solo se puede soltar
@@ -91,8 +99,11 @@ export function DreamTeamPitch({ formation, picks, onSlotClick, onRemove, onMove
   return (
     <div className="overflow-x-auto">
       <div
-        className="relative mx-auto aspect-[16/10] min-w-[620px] overflow-hidden rounded-2xl"
-        style={{ background: "linear-gradient(90deg,#15803d,#16a34a 50%,#15803d)" }}
+        className="relative mx-auto aspect-[16/10] min-w-[620px] overflow-hidden rounded-2xl shadow-inner"
+        style={{
+          // Turf oscuro con franjas de corte: da textura y hace contraste con los puntajes.
+          background: "repeating-linear-gradient(90deg,#0f3d22 0 9%,#14532d 9% 18%)",
+        }}
       >
         {/* Líneas de la cancha */}
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 62" preserveAspectRatio="none">
@@ -111,7 +122,9 @@ export function DreamTeamPitch({ formation, picks, onSlotClick, onRemove, onMove
           return Array.from({ length: n }).map((_, i) => {
             const key = `${pos}${i}`
             const player = picks[key]
-            const validTarget = !!onMove && dragKey != null && dragPos === pos && dragKey !== key
+            const playerLocked = player ? !!isLocked?.(player) : false
+            const validTarget =
+              !!onMove && dragKey != null && dragPos === pos && dragKey !== key && !playerLocked
             return (
               <div
                 key={key}
@@ -128,15 +141,15 @@ export function DreamTeamPitch({ formation, picks, onSlotClick, onRemove, onMove
               >
                 {player ? (
                   <div
-                    draggable={!!onMove}
+                    draggable={!!onMove && !playerLocked}
                     onDragStart={() => setDragKey(key)}
                     onDragEnd={() => setDragKey(null)}
                     className={cn(
-                      onMove && "cursor-grab active:cursor-grabbing",
+                      onMove && !playerLocked && "cursor-grab active:cursor-grabbing",
                       validTarget && "rounded-2xl ring-2 ring-white/90",
                     )}
                   >
-                    <Head p={player} onRemove={onRemove ? () => onRemove(key) : undefined} />
+                    <Head p={player} locked={playerLocked} onRemove={onRemove ? () => onRemove(key) : undefined} />
                   </div>
                 ) : (
                   <div className={cn(validTarget && "rounded-2xl ring-2 ring-white/90")}>

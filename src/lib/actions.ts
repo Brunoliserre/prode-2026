@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { auth } from "./auth"
 import { prisma } from "./prisma"
 import { calcPoints, PICK_POINTS, TOURNAMENT_START } from "./utils"
+import { FORMATIONS, lineCounts, type Formation, type Pos } from "./formations"
 import { announcementEmail, joinRequestEmail, reminderEmail, sendAdminEmail, sendBulkEmail } from "./email"
 
 // ── Admin: email ───────────────────────────────────────────────────────────────
@@ -289,4 +290,96 @@ export async function setFixtureResult(formData: FormData) {
   revalidatePath("/")
   revalidatePath("/admin")
   revalidatePath("/predicciones")
+}
+
+// ── Dream Team ───────────────────────────────────────────────────────────────────
+
+// Guarda (o reemplaza) el dream team del usuario para una ronda.
+export async function saveDreamTeam(
+  round: string,
+  formation: string,
+  picks: { slot: string; playerId: string }[],
+) {
+  const session = await auth()
+  if (!session?.user?.id) throw new Error("No autorizado")
+  const userId = session.user.id
+
+  if (!FORMATIONS.includes(formation as Formation)) throw new Error("Formación inválida")
+  const counts = lineCounts(formation as Formation)
+  const validSlots = new Set<string>()
+  for (const pos of ["GK", "DEF", "MED", "FWD"] as Pos[])
+    for (let i = 0; i < counts[pos]; i++) validSlots.add(`${pos}${i}`)
+
+  const seen = new Set<string>()
+  for (const p of picks) {
+    if (!validSlots.has(p.slot)) throw new Error(`Slot inválido: ${p.slot}`)
+    if (seen.has(p.slot)) throw new Error("Slot repetido")
+    seen.add(p.slot)
+  }
+
+  // Lock por equipo: no se pueden modificar jugadores de equipos cuyo partido
+  // de esta ronda ya arrancó.
+  const now = new Date()
+  const rf = await prisma.fixture.findMany({
+    where: { stage: round },
+    select: { homeTeam: true, awayTeam: true, matchDate: true },
+  })
+  const lockedTeams = new Set(
+    rf.filter((f) => f.matchDate <= now).flatMap((f) => [f.homeTeam, f.awayTeam]),
+  )
+  if (lockedTeams.size) {
+    const teamOf = (pid: string) => pid.slice(0, pid.lastIndexOf("-"))
+    const prev = await prisma.dreamTeam.findUnique({
+      where: { userId_round: { userId, round } },
+      include: { picks: true },
+    })
+    const lockedMap = (ps: { slot: string; playerId: string }[]) => {
+      const m = new Map<string, string>()
+      for (const p of ps) if (lockedTeams.has(teamOf(p.playerId))) m.set(p.slot, p.playerId)
+      return m
+    }
+    const before = lockedMap(prev?.picks ?? [])
+    const after = lockedMap(picks)
+    const same =
+      before.size === after.size && [...before].every(([s, id]) => after.get(s) === id)
+    if (!same) throw new Error("No se pueden modificar jugadores de equipos cuyo partido ya empezó")
+  }
+
+  const dt = await prisma.dreamTeam.upsert({
+    where: { userId_round: { userId, round } },
+    update: { formation },
+    create: { userId, round, formation },
+  })
+  await prisma.dreamTeamPick.deleteMany({ where: { dreamTeamId: dt.id } })
+  if (picks.length)
+    await prisma.dreamTeamPick.createMany({
+      data: picks.map((p) => ({ dreamTeamId: dt.id, slot: p.slot, playerId: p.playerId })),
+    })
+
+  revalidatePath("/dreamteam")
+}
+
+// Admin: carga/actualiza los ratings (FotMob) de jugadores en una ronda.
+export async function saveDreamPlayerScores(
+  round: string,
+  scores: { playerId: string; rating: number | null }[],
+) {
+  const session = await auth()
+  if (session?.user?.email !== process.env.ADMIN_EMAIL) throw new Error("No autorizado")
+
+  for (const s of scores) {
+    if (s.rating == null || Number.isNaN(s.rating)) {
+      await prisma.playerScore.deleteMany({ where: { round, playerId: s.playerId } })
+    } else {
+      await prisma.playerScore.upsert({
+        where: { round_playerId: { round, playerId: s.playerId } },
+        update: { rating: s.rating },
+        create: { round, playerId: s.playerId, rating: s.rating },
+      })
+    }
+  }
+
+  revalidatePath("/")
+  revalidatePath("/admin")
+  revalidatePath("/dreamteam")
 }
