@@ -357,6 +357,7 @@ export async function saveDreamTeam(
     })
 
   revalidatePath("/dreamteam")
+  revalidatePath("/") // el total del ranking incluye los puntos del dream team
 }
 
 // Admin: carga/actualiza los ratings (FotMob) de jugadores en una ronda.

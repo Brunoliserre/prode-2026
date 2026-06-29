@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
-import { Check, Loader, Lock } from "lucide-react"
+import { Check, Loader, Lock, Trash2 } from "lucide-react"
 import { cn, ratingColor } from "@/lib/utils"
 import { esTeamName } from "@/lib/flags"
 import { FORMATIONS, type Formation, type Pos, lineCounts, POS_LABEL } from "@/lib/formations"
@@ -114,6 +114,24 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
     dirty()
   }
 
+  // Borra las selecciones (mantiene los bloqueados) y guarda ese estado, así el
+  // equipo viejo deja de contar aunque quede incompleto.
+  function clear() {
+    const cleared: Record<string, PitchPlayer> = {}
+    for (const [slot, p] of Object.entries(picks)) if (isLocked(p)) cleared[slot] = p
+    setPicks(cleared)
+    const data = Object.entries(cleared).map(([slot, p]) => ({ slot, playerId: p.id }))
+    startSaving(async () => {
+      try {
+        await saveDreamTeam(round, formation, data)
+        setSaved(true)
+      } catch {
+        setSaved(false)
+      }
+    })
+  }
+  const clearable = Object.values(picks).some((p) => !isLocked(p))
+
   function posFull(pos: Pos) {
     let c = 0
     for (let i = 0; i < counts[pos]; i++) if (picks[`${pos}${i}`]) c++
@@ -172,6 +190,14 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
           <span className="text-gray-500 dark:text-neutral-400">
             <span className="font-bold text-gray-900 dark:text-white">{filled}</span>/7
           </span>
+          <button
+            onClick={clear}
+            disabled={!clearable || isSaving}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-neutral-300 dark:hover:bg-white/5"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Limpiar
+          </button>
           <button
             onClick={save}
             disabled={!complete || isSaving || saved}

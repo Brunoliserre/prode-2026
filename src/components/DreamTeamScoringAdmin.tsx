@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Check, Loader } from "lucide-react"
+import { Check, Loader, Trash2 } from "lucide-react"
 import { cn, ratingColor } from "@/lib/utils"
 import { POS_LABEL, type Pos } from "@/lib/formations"
 import { saveDreamPlayerScores } from "@/lib/actions"
@@ -46,6 +46,12 @@ export function DreamTeamScoringAdmin({
     setSaved(false)
   }
 
+  function clearAll() {
+    setRatings(Object.fromEntries(players.map((p) => [p.playerId, ""])))
+    setSaved(false)
+  }
+  const anyRating = Object.values(ratings).some((v) => v?.trim())
+
   function save() {
     const data = players.map((p) => {
       const raw = ratings[p.playerId]?.trim()
@@ -76,6 +82,14 @@ export function DreamTeamScoringAdmin({
           {loaded}/{players.length} con rating
         </p>
         {error && <span className="text-xs text-red-500">{error}</span>}
+        <button
+          onClick={clearAll}
+          disabled={!anyRating}
+          className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-neutral-300 dark:hover:bg-white/5"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Limpiar
+        </button>
         <button
           onClick={save}
           disabled={isSaving}

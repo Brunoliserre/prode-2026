@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { X } from "lucide-react"
+import { BookOpen, X } from "lucide-react"
 
 const SEEN_KEY = "dreamteam-intro-v1"
 
@@ -73,6 +73,15 @@ export function DreamTeamModal() {
             Más tarde
           </button>
         </div>
+
+        <Link
+          href="/reglas#dream-team"
+          onClick={close}
+          className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+        >
+          <BookOpen className="h-4 w-4" />
+          Ver las reglas del Dream Team
+        </Link>
       </div>
     </div>
   )

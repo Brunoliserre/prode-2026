@@ -1,4 +1,12 @@
-import { PICK_POINTS } from "@/lib/utils"
+import { PICK_POINTS, plenoValue } from "@/lib/utils"
+
+const KO_ROUNDS: [string, string][] = [
+  ["16vos", "LAST_32"],
+  ["8vos", "LAST_16"],
+  ["4tos", "QUARTER_FINALS"],
+  ["Semis", "SEMI_FINALS"],
+  ["Final", "FINAL"],
+]
 
 export default function ReglasPage() {
   return (
@@ -38,10 +46,81 @@ export default function ReglasPage() {
 
       {/* Fase Eliminatoria */}
       <Section title="Fase Eliminatoria (Mata-Mata)" icon="⚔️">
-        <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <span className="text-3xl">🚧</span>
-          <p className="text-sm font-medium text-gray-700 dark:text-neutral-300">Trabajando en ello</p>
+        <p className="mb-4 text-sm text-gray-500 dark:text-neutral-400">
+          Mismo sistema que la fase de grupos, pero cada ronda suma un <span className="font-medium">bonus</span>:
+          cuanto más avanzada, más valen los aciertos. El bonus se aplica al acertar el signo.
+        </p>
+        <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-white/5">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-left dark:bg-neutral-800/50">
+                <th className="px-4 py-2 font-semibold text-gray-500 dark:text-neutral-400">Ronda</th>
+                <th className="px-4 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">Acierta signo</th>
+                <th className="px-4 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">Resultado exacto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-t border-gray-100 dark:border-white/5">
+                <td className="px-4 py-2 text-gray-600 dark:text-neutral-400">Grupos</td>
+                <td className="px-4 py-2 text-center font-semibold tabular-nums text-gray-700 dark:text-neutral-200">+4</td>
+                <td className="px-4 py-2 text-center font-bold tabular-nums text-emerald-600 dark:text-emerald-400">+7</td>
+              </tr>
+              {KO_ROUNDS.map(([label, stage]) => {
+                const pleno = plenoValue(stage)
+                return (
+                  <tr key={stage} className="border-t border-gray-100 dark:border-white/5">
+                    <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-100">{label}</td>
+                    <td className="px-4 py-2 text-center font-semibold tabular-nums text-gray-700 dark:text-neutral-200">+{pleno - 3}</td>
+                    <td className="px-4 py-2 text-center font-bold tabular-nums text-emerald-600 dark:text-emerald-400">+{pleno}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
+        <p className="mt-3 text-xs text-gray-400 dark:text-neutral-500">
+          Entre el signo y el exacto valen igual que en grupos los goles de cada equipo (+1 c/u). 3er puesto = igual que Semis.
+        </p>
+      </Section>
+
+      {/* Dream Team */}
+      <Section id="dream-team" title="Dream Team (Mata-Mata)" icon="🌟">
+        <p className="mb-4 text-sm text-gray-500 dark:text-neutral-400">
+          En cada ronda armás un equipo de 7 (1 arquero + la formación que elijas) con jugadores de las
+          selecciones en carrera. Cada jugador suma su <span className="font-medium">rating de FotMob</span>;
+          la suma define tu puesto de la ronda. Según el puesto sumás puntos a tu total general:
+        </p>
+        <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-white/5">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-left dark:bg-neutral-800/50">
+                <th className="px-4 py-2 font-semibold text-gray-500 dark:text-neutral-400">Ronda</th>
+                <th className="px-3 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">1º</th>
+                <th className="px-3 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">2º</th>
+                <th className="px-3 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">3º</th>
+                <th className="px-3 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">4º+</th>
+              </tr>
+            </thead>
+            <tbody>
+              {KO_ROUNDS.map(([label, stage]) => {
+                const p = plenoValue(stage)
+                return (
+                  <tr key={stage} className="border-t border-gray-100 dark:border-white/5">
+                    <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-100">{label}</td>
+                    <td className="px-3 py-2 text-center font-bold tabular-nums text-emerald-600 dark:text-emerald-400">+{p}</td>
+                    <td className="px-3 py-2 text-center tabular-nums text-gray-700 dark:text-neutral-200">+{p - 2}</td>
+                    <td className="px-3 py-2 text-center tabular-nums text-gray-700 dark:text-neutral-200">+{p - 3}</td>
+                    <td className="px-3 py-2 text-center tabular-nums text-gray-700 dark:text-neutral-200">+{p - 4}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-xs text-gray-400 dark:text-neutral-500">
+          El 1º vale el pleno de esa ronda. Empates comparten puesto y puntos. Los jugadores de un equipo
+          se bloquean cuando arranca su partido.
+        </p>
       </Section>
 
       {/* Predicciones del Torneo */}
@@ -103,7 +182,8 @@ export default function ReglasPage() {
       <Section title="Resumen de puntos máximos" icon="📊">
         <div className="space-y-2">
           <SummaryRow label="Fase de Grupos (72 partidos)" value="hasta 504 pts" />
-          <SummaryRow label="Fase Eliminatoria" value="Trabajando en ello" />
+          <SummaryRow label="Fase Eliminatoria" value="por partido, +5 a +12" />
+          <SummaryRow label="Dream Team" value="por ronda, hasta +12" />
           <SummaryRow label="Campeón + Subcampeón" value="hasta 28 pts" />
           <SummaryRow label="7 Premios Especiales" value="hasta 72 pts" />
           <div className="mt-3 rounded-xl bg-gray-900 px-4 py-3 dark:bg-white/5">
@@ -118,9 +198,9 @@ export default function ReglasPage() {
   )
 }
 
-function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+function Section({ id, title, icon, children }: { id?: string; title: string; icon: string; children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/5 dark:bg-neutral-900">
+    <div id={id} className="scroll-mt-24 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/5 dark:bg-neutral-900">
       <div className="flex items-center gap-2.5 border-b border-gray-200 px-5 py-4 dark:border-white/5">
         <span className="text-lg">{icon}</span>
         <h2 className="font-semibold text-gray-900 dark:text-white">{title}</h2>
