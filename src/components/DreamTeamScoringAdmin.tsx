@@ -15,7 +15,6 @@ export type ScoringPlayer = {
   rating: number | null
 }
 
-const POS_ORDER: Pos[] = ["GK", "DEF", "MED", "FWD"]
 
 export function DreamTeamScoringAdmin({
   round,
@@ -84,7 +83,12 @@ export function DreamTeamScoringAdmin({
     })
   }
 
-  const byPos = (pos: Pos) => players.filter((p) => p.position === pos)
+  const posRank: Record<Pos, number> = { GK: 0, DEF: 1, MED: 2, FWD: 3 }
+  const clubs = [...new Set(players.map((p) => p.club))].sort((a, b) => a.localeCompare(b))
+  const byClub = (club: string) =>
+    players
+      .filter((p) => p.club === club)
+      .sort((a, b) => posRank[a.position] - posRank[b.position] || a.name.localeCompare(b.name))
   const loaded = players.filter((p) => ratings[p.playerId]?.trim()).length
 
   return (
@@ -149,19 +153,19 @@ export function DreamTeamScoringAdmin({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {POS_ORDER.map((pos) => (
-          <div key={pos}>
+        {clubs.map((club) => (
+          <div key={club}>
             <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-neutral-400">
-              {POS_LABEL[pos]}
+              {club}
             </p>
             <div className="space-y-1">
-              {byPos(pos).map((p) => {
+              {byClub(club).map((p) => {
                 const val = ratings[p.playerId] ?? ""
                 const num = val.trim() === "" ? null : Number(val)
                 return (
                   <div key={p.playerId} className="flex items-center gap-2">
                     <span className="min-w-0 flex-1 truncate text-sm text-gray-700 dark:text-neutral-200">
-                      {p.name} <span className="text-gray-400 dark:text-neutral-500">· {p.club}</span>
+                      {p.name} <span className="text-gray-400 dark:text-neutral-500">· {POS_LABEL[p.position]}</span>
                     </span>
                     <span className="shrink-0 text-[10px] text-gray-400 dark:text-neutral-600" title="Elegido por N equipos">
                       ×{p.count}
