@@ -126,3 +126,10 @@ model PlayerScore {
 
   @@unique([round, playerId])
 }
+
+// Estado de una ronda del dream team. Los puntos/ranking se calculan recién
+// cuando el admin la marca como finalizada (cierra la fecha).
+model DreamRound {
+  round     String  @id
+  finalized Boolean @default(false)
+}

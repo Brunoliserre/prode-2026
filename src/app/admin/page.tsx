@@ -50,6 +50,8 @@ export default async function AdminPage() {
   const dtRoundLabel = KO_LABEL[dtRound] ?? dtRound
   const dtTeams = await prisma.dreamTeam.findMany({ where: { round: dtRound }, include: { picks: true } })
   const dtScores = await prisma.playerScore.findMany({ where: { round: dtRound } })
+  const dtRoundRow = await prisma.dreamRound.findUnique({ where: { round: dtRound } })
+  const dtFinalized = dtRoundRow?.finalized ?? false
   const ratingOf = new Map(dtScores.map((s) => [s.playerId, s.rating]))
   const countOf = new Map<string, number>()
   for (const t of dtTeams) for (const p of t.picks) countOf.set(p.playerId, (countOf.get(p.playerId) ?? 0) + 1)
@@ -115,7 +117,7 @@ export default async function AdminPage() {
           Jugadores elegidos por los participantes en esta ronda. Cargá el rating de FotMob (1-10) de cada uno;
           la suma define el ranking del dream team, que se suma al total.
         </p>
-        <DreamTeamScoringAdmin round={dtRound} roundLabel={dtRoundLabel} players={dtPlayers} />
+        <DreamTeamScoringAdmin round={dtRound} roundLabel={dtRoundLabel} players={dtPlayers} finalized={dtFinalized} />
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">

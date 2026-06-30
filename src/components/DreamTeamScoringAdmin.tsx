@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Check, Loader, Trash2 } from "lucide-react"
+import { Check, Loader, Lock, LockOpen, Trash2 } from "lucide-react"
 import { cn, ratingColor } from "@/lib/utils"
 import { POS_LABEL, type Pos } from "@/lib/formations"
-import { saveDreamPlayerScores } from "@/lib/actions"
+import { saveDreamPlayerScores, setDreamRoundFinalized } from "@/lib/actions"
 
 export type ScoringPlayer = {
   playerId: string
@@ -21,10 +21,12 @@ export function DreamTeamScoringAdmin({
   round,
   roundLabel,
   players,
+  finalized,
 }: {
   round: string
   roundLabel: string
   players: ScoringPlayer[]
+  finalized: boolean
 }) {
   const [ratings, setRatings] = useState<Record<string, string>>(() =>
     Object.fromEntries(players.map((p) => [p.playerId, p.rating != null ? String(p.rating) : ""])),
@@ -32,6 +34,17 @@ export function DreamTeamScoringAdmin({
   const [saved, setSaved] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, startSaving] = useTransition()
+  const [isToggling, startToggle] = useTransition()
+
+  function toggleFinalized() {
+    startToggle(async () => {
+      try {
+        await setDreamRoundFinalized(round, !finalized)
+      } catch {
+        /* noop */
+      }
+    })
+  }
 
   if (!players.length) {
     return (
@@ -102,6 +115,36 @@ export function DreamTeamScoringAdmin({
         >
           {isSaving ? <Loader className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : null}
           {isSaving ? "Guardando" : saved ? "Guardado" : "Guardar ratings"}
+        </button>
+      </div>
+
+      {/* Finalizar / reabrir la fecha */}
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-white/5">
+        <span className="text-sm text-gray-600 dark:text-neutral-300">
+          {finalized ? (
+            <span className="font-medium text-emerald-600 dark:text-emerald-400">Fecha cerrada · los puntos cuentan en el ranking</span>
+          ) : (
+            "Fecha en juego · los puntos NO se calculan hasta cerrarla"
+          )}
+        </span>
+        <button
+          onClick={toggleFinalized}
+          disabled={isToggling}
+          className={cn(
+            "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50",
+            finalized
+              ? "border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-white/10 dark:text-neutral-300 dark:hover:bg-white/5"
+              : "bg-gray-900 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200",
+          )}
+        >
+          {isToggling ? (
+            <Loader className="h-3.5 w-3.5 animate-spin" />
+          ) : finalized ? (
+            <LockOpen className="h-3.5 w-3.5" />
+          ) : (
+            <Lock className="h-3.5 w-3.5" />
+          )}
+          {finalized ? "Reabrir fecha" : "Finalizar fecha"}
         </button>
       </div>
 

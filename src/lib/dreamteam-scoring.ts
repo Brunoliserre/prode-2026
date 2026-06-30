@@ -30,20 +30,23 @@ const ptsForRank = (rank: number, pleno: number) =>
 
 export type RoundStanding = { userId: string; score: number; position: number; points: number }
 
-// Standings por ronda (solo rondas con algún rating cargado). Por ronda: suma de
-// los 7 ratings define el puesto; puesto 1 = pleno de la ronda, 2º −2, 3º −3,
-// 4º+ −4. Empates comparten puesto y puntos. Solo equipos completos (7).
+// Rondas finalizadas (cerradas por el admin). Solo esas otorgan puntos.
+export async function finalizedRounds(): Promise<Set<string>> {
+  const rows = await prisma.dreamRound.findMany({ where: { finalized: true }, select: { round: true } })
+  return new Set(rows.map((r) => r.round))
+}
+
+// Standings por ronda — SOLO rondas finalizadas. Por ronda: suma de los 7 ratings
+// define el puesto; puesto 1 = pleno de la ronda, 2º −2, 3º −3, 4º+ −4. Empates
+// comparten puesto y puntos. Solo equipos completos (7).
 async function computeRounds(): Promise<Map<string, RoundStanding[]>> {
-  const [teams, scores] = await Promise.all([
+  const [teams, scores, finalized] = await Promise.all([
     prisma.dreamTeam.findMany({ include: { picks: true } }),
     prisma.playerScore.findMany(),
+    finalizedRounds(),
   ])
   const ratingOf = new Map<string, number>()
-  const scoredRounds = new Set<string>()
-  for (const s of scores) {
-    ratingOf.set(`${s.round}|${s.playerId}`, s.rating)
-    scoredRounds.add(s.round)
-  }
+  for (const s of scores) ratingOf.set(`${s.round}|${s.playerId}`, s.rating)
 
   const byRound = new Map<string, typeof teams>()
   for (const t of teams) {
@@ -53,7 +56,7 @@ async function computeRounds(): Promise<Map<string, RoundStanding[]>> {
 
   const result = new Map<string, RoundStanding[]>()
   for (const [round, dts] of byRound) {
-    if (!scoredRounds.has(round)) continue
+    if (!finalized.has(round)) continue
     const ranked = dts
       .filter((t) => t.picks.length === 7)
       .map((t) => ({
@@ -116,17 +119,18 @@ export type MyDreamTeam = {
   formation: Formation
   picks: Record<string, PitchPlayer> // slot → jugador (rating de la ronda si está cargado)
   complete: boolean
-  scored: boolean
-  score: number | null // suma de ratings
-  avg: number | null // promedio
-  position: number | null
-  points: number | null
+  finalized: boolean // si la fecha ya cerró (puntos oficiales)
+  score: number | null // suma de ratings de los que ya jugaron (provisorio)
+  avg: number | null // promedio de los que ya jugaron
+  position: number | null // solo si la fecha cerró
+  points: number | null // solo si la fecha cerró
 }
 export async function myDreamTeams(userId: string): Promise<MyDreamTeam[]> {
-  const [teams, scores, rounds] = await Promise.all([
+  const [teams, scores, rounds, finalized] = await Promise.all([
     prisma.dreamTeam.findMany({ where: { userId }, include: { picks: true } }),
     prisma.playerScore.findMany(),
     computeRounds(),
+    finalizedRounds(),
   ])
   const ratingOf = new Map<string, number>()
   for (const s of scores) ratingOf.set(`${s.round}|${s.playerId}`, s.rating)
@@ -134,10 +138,14 @@ export async function myDreamTeams(userId: string): Promise<MyDreamTeam[]> {
   return teams
     .map((t) => {
       const picks: Record<string, PitchPlayer> = {}
+      const loaded: number[] = []
       for (const p of t.picks) {
+        const r = ratingOf.get(`${t.round}|${p.playerId}`) ?? null
+        if (r != null) loaded.push(r)
         const base = PLAYER_BY_ID.get(p.playerId)
-        if (base) picks[p.slot] = { ...base, rating: ratingOf.get(`${t.round}|${p.playerId}`) ?? null }
+        if (base) picks[p.slot] = { ...base, rating: r }
       }
+      const sum = loaded.reduce((a, b) => a + b, 0)
       const mine = rounds.get(t.round)?.find((s) => s.userId === userId)
       return {
         round: t.round,
@@ -145,9 +153,9 @@ export async function myDreamTeams(userId: string): Promise<MyDreamTeam[]> {
         formation: t.formation as Formation,
         picks,
         complete: t.picks.length === 7,
-        scored: !!mine,
-        score: mine?.score ?? null,
-        avg: mine ? mine.score / 7 : null,
+        finalized: finalized.has(t.round),
+        score: loaded.length ? sum : null,
+        avg: loaded.length ? sum / loaded.length : null,
         position: mine?.position ?? null,
         points: mine?.points ?? null,
       }

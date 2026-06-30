@@ -384,3 +384,20 @@ export async function saveDreamPlayerScores(
   revalidatePath("/admin")
   revalidatePath("/dreamteam")
 }
+
+// Admin: finaliza (o reabre) una ronda del dream team. Solo al finalizar se
+// calculan los puestos y los puntos suman al total.
+export async function setDreamRoundFinalized(round: string, finalized: boolean) {
+  const session = await auth()
+  if (session?.user?.email !== process.env.ADMIN_EMAIL) throw new Error("No autorizado")
+
+  await prisma.dreamRound.upsert({
+    where: { round },
+    update: { finalized },
+    create: { round, finalized },
+  })
+
+  revalidatePath("/")
+  revalidatePath("/admin")
+  revalidatePath("/dreamteam")
+}

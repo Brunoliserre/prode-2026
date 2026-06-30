@@ -11,7 +11,7 @@ export type MyTeam = {
   formation: Formation
   picks: Record<string, PitchPlayer>
   complete: boolean
-  scored: boolean
+  finalized: boolean
   score: number | null
   avg: number | null
   position: number | null
@@ -45,15 +45,22 @@ export function MyDreamTeams({ teams }: { teams: MyTeam[] }) {
           <tbody>
             {teams.map((t) => (
               <tr key={t.round} className="border-b border-gray-100 last:border-0 dark:border-white/5">
-                <td className="px-4 py-3 font-medium text-gray-800 dark:text-neutral-100">{t.label}</td>
+                <td className="px-4 py-3 font-medium text-gray-800 dark:text-neutral-100">
+                  {t.label}
+                  {!t.finalized && (
+                    <span className="ml-1.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                      en juego
+                    </span>
+                  )}
+                </td>
                 <td className="px-3 py-3 text-center tabular-nums text-gray-600 dark:text-neutral-300">
                   {t.avg != null ? t.avg.toFixed(1) : "—"}
                 </td>
                 <td className="px-3 py-3 text-center tabular-nums text-gray-600 dark:text-neutral-300">
-                  {t.position != null ? `${t.position}º` : "—"}
+                  {t.finalized && t.position != null ? `${t.position}º` : "—"}
                 </td>
                 <td className="px-3 py-3 text-center font-bold tabular-nums text-gray-900 dark:text-white">
-                  {t.points != null ? `+${t.points}` : "—"}
+                  {t.finalized && t.points != null ? `+${t.points}` : "—"}
                 </td>
                 <td className="px-3 py-3 text-right">
                   <button
