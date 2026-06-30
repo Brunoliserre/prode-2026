@@ -36,11 +36,11 @@ function Head({ p, onRemove, locked }: { p: PitchPlayer; onRemove?: () => void; 
             </div>
           )}
         </div>
-        {locked ? (
+        {locked && p.rating == null ? (
           <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-white shadow" title="Bloqueado: el partido ya empezó">
             <Lock className="h-2.5 w-2.5" />
           </span>
-        ) : onRemove ? (
+        ) : !locked && onRemove ? (
           <button
             onClick={onRemove}
             className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white opacity-0 shadow transition-opacity group-hover:opacity-100"

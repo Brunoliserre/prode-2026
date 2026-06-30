@@ -18,9 +18,10 @@ interface Props {
   initialFormation: Formation | null
   initialPicks: Record<string, string> // slot → playerId
   lockedTeams: string[]
+  ratings?: Record<string, number> // playerId → rating de la ronda (si ya está cargado)
 }
 
-export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialPicks, lockedTeams }: Props) {
+export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialPicks, lockedTeams, ratings }: Props) {
   const locked = useMemo(() => new Set(lockedTeams), [lockedTeams])
   const isLocked = (p: PitchPlayer) => locked.has(teamOf(p))
 
@@ -52,7 +53,17 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
   }, [query, searching, allPlayers])
   const pickedIds = new Set(Object.values(picks).map((p) => p.id))
   const filled = Object.keys(picks).length
-  const total = Object.values(picks).reduce((s, p) => s + (p.rating ?? 0), 0)
+  // Picks con el rating de la ronda (si ya está cargado) para mostrar en la cancha.
+  const pitchPicks = useMemo(() => {
+    if (!ratings) return picks
+    const out: Record<string, PitchPlayer> = {}
+    for (const [slot, p] of Object.entries(picks)) {
+      const r = ratings[p.id]
+      out[slot] = r != null ? { ...p, rating: r } : p
+    }
+    return out
+  }, [picks, ratings])
+  const total = Object.values(pitchPicks).reduce((s, p) => s + (p.rating ?? 0), 0)
   const dirty = () => setSaved(false)
 
   // Cantidad de jugadores bloqueados por posición (para validar formaciones).
@@ -232,7 +243,7 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
       )}
 
       {/* Cancha */}
-      <DreamTeamPitch formation={formation} picks={picks} onRemove={removeSlot} onMove={move} isLocked={isLocked} />
+      <DreamTeamPitch formation={formation} picks={pitchPicks} onRemove={removeSlot} onMove={move} isLocked={isLocked} />
 
       {/* Buscador */}
       <div className="relative">

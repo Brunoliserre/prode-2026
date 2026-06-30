@@ -38,6 +38,13 @@ export default async function DreamTeamPage() {
     dt && FORMATIONS.includes(dt.formation as Formation) ? (dt.formation as Formation) : null
   const initialPicks = Object.fromEntries((dt?.picks ?? []).map((p) => [p.slot, p.playerId]))
 
+  // Ratings ya cargados de la ronda (para mostrarlos en la cancha del armado).
+  const roundScores = await prisma.playerScore.findMany({
+    where: { round },
+    select: { playerId: true, rating: true },
+  })
+  const ratings = Object.fromEntries(roundScores.map((s) => [s.playerId, s.rating]))
+
   const [myTeams, standings] = await Promise.all([myDreamTeams(userId), dreamTeamStandings()])
 
   return (
@@ -55,6 +62,7 @@ export default async function DreamTeamPage() {
           initialFormation={initialFormation}
           initialPicks={initialPicks}
           lockedTeams={lockedTeams}
+          ratings={ratings}
         />
       </div>
 
