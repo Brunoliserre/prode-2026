@@ -1,5 +1,4 @@
 import { prisma } from "./prisma"
-import { plenoValue } from "./utils"
 import { PLAYER_BY_ID } from "./dreamteam-mock"
 import type { Formation } from "./formations"
 import type { PitchPlayer } from "@/components/DreamTeamPitch"
@@ -25,8 +24,10 @@ export async function currentRound(): Promise<string> {
   )
 }
 
-const ptsForRank = (rank: number, pleno: number) =>
-  pleno - (rank === 1 ? 0 : rank === 2 ? 2 : rank === 3 ? 3 : 4)
+// Puntos por puesto en cada ronda finalizada (escala fija).
+// 1º 8 · 2º 6 · 3º 5 · 4º 4 · 5º 3 · 6º 2 · 7º y siguientes 1. No participar: nada.
+const ptsForRank = (rank: number) =>
+  rank === 1 ? 8 : rank === 2 ? 6 : rank === 3 ? 5 : rank === 4 ? 4 : rank === 5 ? 3 : rank === 6 ? 2 : 1
 
 export type RoundStanding = { userId: string; score: number; position: number; points: number }
 
@@ -37,8 +38,8 @@ export async function finalizedRounds(): Promise<Set<string>> {
 }
 
 // Standings por ronda — SOLO rondas finalizadas. Por ronda: suma de los 7 ratings
-// define el puesto; puesto 1 = pleno de la ronda, 2º −2, 3º −3, 4º+ −4. Empates
-// comparten puesto y puntos. Solo equipos completos (7).
+// define el puesto; los puntos por puesto salen de ptsForRank (1º 8 … 7º+ 1).
+// Empates comparten puesto y puntos. Solo equipos completos (7).
 async function computeRounds(): Promise<Map<string, RoundStanding[]>> {
   const [teams, scores, finalized] = await Promise.all([
     prisma.dreamTeam.findMany({ include: { picks: true } }),
@@ -65,13 +66,12 @@ async function computeRounds(): Promise<Map<string, RoundStanding[]>> {
       }))
       .sort((a, b) => b.score - a.score)
 
-    const pleno = plenoValue(round)
     const standings: RoundStanding[] = []
     let i = 0
     while (i < ranked.length) {
       let j = i
       while (j + 1 < ranked.length && ranked[j + 1].score === ranked[i].score) j++
-      const points = ptsForRank(i + 1, pleno)
+      const points = ptsForRank(i + 1)
       for (let k = i; k <= j; k++)
         standings.push({ userId: ranked[k].userId, score: ranked[k].score, position: i + 1, points })
       i = j + 1
@@ -161,4 +161,93 @@ export async function myDreamTeams(userId: string): Promise<MyDreamTeam[]> {
       }
     })
     .sort((a, b) => KO_ORDER.indexOf(a.round) - KO_ORDER.indexOf(b.round))
+}
+
+// "Dream teams de los demás": por cada ronda ya revelada, los equipos de todos.
+// Una ronda se revela cuando TODOS sus partidos ya empezaron (o el admin la
+// cerró), para no filtrar picks de equipos que todavía no jugaron.
+export type OthersTeam = {
+  userId: string
+  name: string | null
+  image: string | null
+  formation: Formation
+  picks: Record<string, PitchPlayer>
+  complete: boolean
+  score: number | null // suma de ratings ya cargados
+  position: number | null // si la ronda está finalizada
+  points: number | null
+}
+export type OthersRound = { round: string; label: string; finalized: boolean; teams: OthersTeam[] }
+
+export async function othersDreamTeams(): Promise<OthersRound[]> {
+  const now = new Date()
+  const [teams, scores, koFixtures, rounds, finalized] = await Promise.all([
+    prisma.dreamTeam.findMany({ include: { picks: true, user: { select: { id: true, name: true, image: true } } } }),
+    prisma.playerScore.findMany(),
+    prisma.fixture.findMany({
+      where: { stage: { notIn: ["GROUP_STAGE"] }, NOT: { stage: null } },
+      select: { stage: true, matchDate: true },
+    }),
+    computeRounds(),
+    finalizedRounds(),
+  ])
+  const ratingOf = new Map<string, number>()
+  for (const s of scores) ratingOf.set(`${s.round}|${s.playerId}`, s.rating)
+
+  // Rondas reveladas: todos sus partidos empezaron, o fue finalizada.
+  const fixturesByRound = new Map<string, Date[]>()
+  for (const f of koFixtures) {
+    if (!f.stage) continue
+    if (!fixturesByRound.has(f.stage)) fixturesByRound.set(f.stage, [])
+    fixturesByRound.get(f.stage)!.push(f.matchDate)
+  }
+  const revealed = (round: string) =>
+    finalized.has(round) ||
+    (fixturesByRound.has(round) && fixturesByRound.get(round)!.every((d) => d <= now))
+
+  const byRound = new Map<string, typeof teams>()
+  for (const t of teams) {
+    if (!byRound.has(t.round)) byRound.set(t.round, [])
+    byRound.get(t.round)!.push(t)
+  }
+
+  const out: OthersRound[] = []
+  for (const round of KO_ORDER) {
+    if (!revealed(round)) continue
+    const dts = byRound.get(round)
+    if (!dts?.length) continue
+    const standings = rounds.get(round)
+    const rows: OthersTeam[] = dts.map((t) => {
+      const picks: Record<string, PitchPlayer> = {}
+      const loaded: number[] = []
+      for (const p of t.picks) {
+        const r = ratingOf.get(`${round}|${p.playerId}`) ?? null
+        if (r != null) loaded.push(r)
+        const base = PLAYER_BY_ID.get(p.playerId)
+        if (base) picks[p.slot] = { ...base, rating: r }
+      }
+      const mine = standings?.find((s) => s.userId === t.userId)
+      return {
+        userId: t.userId,
+        name: t.user.name,
+        image: t.user.image,
+        formation: t.formation as Formation,
+        picks,
+        complete: t.picks.length === 7,
+        score: loaded.length ? loaded.reduce((a, b) => a + b, 0) : null,
+        position: mine?.position ?? null,
+        points: mine?.points ?? null,
+      }
+    })
+    // Ordenar: por puesto si está finalizada, si no por score provisorio, luego nombre.
+    rows.sort(
+      (a, b) =>
+        (a.position ?? 99) - (b.position ?? 99) ||
+        (b.score ?? -1) - (a.score ?? -1) ||
+        (a.name ?? "").localeCompare(b.name ?? ""),
+    )
+    out.push({ round, label: KO_LABEL[round] ?? round, finalized: finalized.has(round), teams: rows })
+  }
+  // Más nuevas primero (Final … 16vos).
+  return out.reverse()
 }

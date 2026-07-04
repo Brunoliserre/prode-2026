@@ -68,7 +68,8 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
   const groupFixtures = useMemo(() => visibleFixtures.filter((f) => !isKnockout(f)), [visibleFixtures])
   const koFixtures = useMemo(() => visibleFixtures.filter(isKnockout), [visibleFixtures])
 
-  // Eliminatorias agrupadas por ronda, en orden (solo rondas con partidos).
+  // Eliminatorias agrupadas por ronda (solo rondas con partidos). Las fases más
+  // nuevas van primero (Final … 16vos).
   const byStage = useMemo(() => {
     const map = new Map<string, Fixture[]>()
     for (const f of koFixtures) {
@@ -78,7 +79,7 @@ export function FixturesView({ fixtures, predMap, userId, now, emblemUrl }: Prop
     }
     for (const list of map.values())
       list.sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())
-    return KO_STAGES.filter((s) => map.has(s)).map((s) => [s, map.get(s)!] as const)
+    return KO_STAGES.filter((s) => map.has(s)).reverse().map((s) => [s, map.get(s)!] as const)
   }, [koFixtures])
 
   const byGroup = useMemo(() => {

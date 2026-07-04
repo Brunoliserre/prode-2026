@@ -4,8 +4,9 @@ import { prisma } from "@/lib/prisma"
 import Image from "next/image"
 import { DreamTeamBuilder } from "@/components/DreamTeamBuilder"
 import { MyDreamTeams } from "@/components/MyDreamTeams"
+import { OthersDreamTeams } from "@/components/OthersDreamTeams"
 import { FORMATIONS, type Formation } from "@/lib/formations"
-import { currentRound, KO_LABEL, myDreamTeams, dreamTeamStandings } from "@/lib/dreamteam-scoring"
+import { currentRound, KO_LABEL, myDreamTeams, dreamTeamStandings, othersDreamTeams } from "@/lib/dreamteam-scoring"
 
 export const revalidate = 0
 export const metadata = { title: "Dream Team" }
@@ -45,7 +46,11 @@ export default async function DreamTeamPage() {
   })
   const ratings = Object.fromEntries(roundScores.map((s) => [s.playerId, s.rating]))
 
-  const [myTeams, standings] = await Promise.all([myDreamTeams(userId), dreamTeamStandings()])
+  const [myTeams, standings, others] = await Promise.all([
+    myDreamTeams(userId),
+    dreamTeamStandings(),
+    othersDreamTeams(),
+  ])
 
   return (
     <div className="space-y-8">
@@ -70,6 +75,15 @@ export default async function DreamTeamPage() {
       <div>
         <h2 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">Mis Dream Teams</h2>
         <MyDreamTeams teams={myTeams} />
+      </div>
+
+      {/* Dream teams de los demás, por ronda */}
+      <div>
+        <h2 className="mb-1 text-lg font-bold text-gray-900 dark:text-white">Dream Teams de los demás</h2>
+        <p className="mb-2 text-sm text-gray-400 dark:text-neutral-500">
+          Mirá los equipos del resto una vez que empezaron los partidos de cada ronda.
+        </p>
+        <OthersDreamTeams rounds={others} />
       </div>
 
       {/* Tabla específica del dream team */}

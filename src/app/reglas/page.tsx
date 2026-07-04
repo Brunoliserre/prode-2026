@@ -1,4 +1,4 @@
-import { PICK_POINTS, plenoValue } from "@/lib/utils"
+import { PICK_POINTS, plenoValue, cn } from "@/lib/utils"
 
 const KO_ROUNDS: [string, string][] = [
   ["16vos", "LAST_32"],
@@ -94,32 +94,32 @@ export default function ReglasPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 text-left dark:bg-neutral-800/50">
-                <th className="px-4 py-2 font-semibold text-gray-500 dark:text-neutral-400">Ronda</th>
-                <th className="px-3 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">1º</th>
-                <th className="px-3 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">2º</th>
-                <th className="px-3 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">3º</th>
-                <th className="px-3 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">4º+</th>
+                <th className="px-4 py-2 font-semibold text-gray-500 dark:text-neutral-400">Puesto</th>
+                <th className="px-4 py-2 text-center font-semibold text-gray-500 dark:text-neutral-400">Puntos</th>
               </tr>
             </thead>
             <tbody>
-              {KO_ROUNDS.map(([label, stage]) => {
-                const p = plenoValue(stage)
-                return (
-                  <tr key={stage} className="border-t border-gray-100 dark:border-white/5">
-                    <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-100">{label}</td>
-                    <td className="px-3 py-2 text-center font-bold tabular-nums text-emerald-600 dark:text-emerald-400">+{p}</td>
-                    <td className="px-3 py-2 text-center tabular-nums text-gray-700 dark:text-neutral-200">+{p - 2}</td>
-                    <td className="px-3 py-2 text-center tabular-nums text-gray-700 dark:text-neutral-200">+{p - 3}</td>
-                    <td className="px-3 py-2 text-center tabular-nums text-gray-700 dark:text-neutral-200">+{p - 4}</td>
-                  </tr>
-                )
-              })}
+              {[
+                ["1º", 8], ["2º", 6], ["3º", 5], ["4º", 4], ["5º", 3], ["6º", 2], ["7º en adelante", 1],
+              ].map(([label, pts], i) => (
+                <tr key={label} className="border-t border-gray-100 dark:border-white/5">
+                  <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-100">{label}</td>
+                  <td className={cn(
+                    "px-4 py-2 text-center font-bold tabular-nums",
+                    i === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-700 dark:text-neutral-200",
+                  )}>+{pts}</td>
+                </tr>
+              ))}
+              <tr className="border-t border-gray-100 dark:border-white/5">
+                <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-100">No participás</td>
+                <td className="px-4 py-2 text-center tabular-nums text-gray-400 dark:text-neutral-500">—</td>
+              </tr>
             </tbody>
           </table>
         </div>
         <p className="mt-3 text-xs text-gray-400 dark:text-neutral-500">
-          El 1º vale el pleno de esa ronda. Empates comparten puesto y puntos. Los jugadores de un equipo
-          se bloquean cuando arranca su partido.
+          El puntaje por puesto es el mismo en todas las rondas. Empates comparten puesto y puntos. Los
+          jugadores de un equipo se bloquean cuando arranca su partido.
         </p>
       </Section>
 
@@ -183,7 +183,7 @@ export default function ReglasPage() {
         <div className="space-y-2">
           <SummaryRow label="Fase de Grupos (72 partidos)" value="hasta 504 pts" />
           <SummaryRow label="Fase Eliminatoria" value="por partido, +5 a +12" />
-          <SummaryRow label="Dream Team" value="por ronda, hasta +12" />
+          <SummaryRow label="Dream Team" value="por ronda, +1 a +8" />
           <SummaryRow label="Campeón + Subcampeón" value="hasta 28 pts" />
           <SummaryRow label="7 Premios Especiales" value="hasta 72 pts" />
           <div className="mt-3 rounded-xl bg-gray-900 px-4 py-3 dark:bg-white/5">
