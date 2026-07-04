@@ -60,41 +60,52 @@ function RoundCard({
       </button>
 
       {open && (
-        <div>
-          {round.teams.map((t) => (
-            <div
-              key={t.userId}
-              className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-2.5 last:border-0 dark:border-white/5"
-            >
-              <div className="flex min-w-0 items-center gap-2.5">
-                {round.finalized && t.position != null && (
-                  <span className="w-5 shrink-0 text-center font-mono text-xs text-gray-400 dark:text-neutral-500">
-                    {t.position}º
-                  </span>
-                )}
-                <Avatar name={t.name} image={t.image} />
-                <span className="truncate text-sm text-gray-800 dark:text-neutral-100">{t.name ?? "Anónimo"}</span>
-                {!t.complete && (
-                  <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-400 dark:bg-neutral-800 dark:text-neutral-500">
-                    incompleto
-                  </span>
-                )}
-              </div>
-              <div className="flex shrink-0 items-center gap-2.5">
-                {round.finalized && t.points != null ? (
-                  <span className="font-bold tabular-nums text-gray-900 dark:text-white">+{t.points}</span>
-                ) : t.score != null ? (
-                  <span className="tabular-nums text-gray-400 dark:text-neutral-500">{t.score.toFixed(1)}</span>
-                ) : null}
-                <button
-                  onClick={() => onView(t, round.label)}
-                  className="rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-neutral-300 dark:hover:bg-white/5"
-                >
-                  Ver dream team
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-left dark:border-white/5">
+                <th className="px-4 py-2 font-semibold text-gray-400 dark:text-neutral-500">#</th>
+                <th className="px-2 py-2 font-semibold text-gray-400 dark:text-neutral-500">Jugador</th>
+                <th className="px-3 py-2 text-center font-semibold text-gray-400 dark:text-neutral-500">Suma</th>
+                <th className="px-3 py-2 text-center font-semibold text-gray-400 dark:text-neutral-500">Pts fecha</th>
+                <th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {round.teams.map((t) => (
+                <tr key={t.userId} className="border-b border-gray-100 last:border-0 dark:border-white/5">
+                  <td className="px-4 py-2.5 font-mono text-xs text-gray-400 dark:text-neutral-500">
+                    {round.finalized && t.position != null ? `${t.position}º` : "—"}
+                  </td>
+                  <td className="px-2 py-2.5">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Avatar name={t.name} image={t.image} />
+                      <span className="truncate text-gray-800 dark:text-neutral-100">{t.name ?? "Anónimo"}</span>
+                      {!t.complete && (
+                        <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-400 dark:bg-neutral-800 dark:text-neutral-500">
+                          incompleto
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2.5 text-center tabular-nums text-gray-500 dark:text-neutral-400">
+                    {t.score != null ? t.score.toFixed(1) : "—"}
+                  </td>
+                  <td className="px-3 py-2.5 text-center font-bold tabular-nums text-gray-900 dark:text-white">
+                    {round.finalized && t.points != null ? `+${t.points}` : "—"}
+                  </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <button
+                      onClick={() => onView(t, round.label)}
+                      className="whitespace-nowrap rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-neutral-300 dark:hover:bg-white/5"
+                    >
+                      Ver dream team
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

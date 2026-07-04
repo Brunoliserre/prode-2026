@@ -18,12 +18,17 @@ interface Props {
   initialFormation: Formation | null
   initialPicks: Record<string, string> // slot → playerId
   lockedTeams: string[]
+  availableTeams: string[] // equipos que juegan esta ronda (el resto está eliminado)
   ratings?: Record<string, number> // playerId → rating de la ronda (si ya está cargado)
 }
 
-export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialPicks, lockedTeams, ratings }: Props) {
+export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialPicks, lockedTeams, availableTeams, ratings }: Props) {
   const locked = useMemo(() => new Set(lockedTeams), [lockedTeams])
   const isLocked = (p: PitchPlayer) => locked.has(teamOf(p))
+
+  // Solo se pueden elegir jugadores de equipos que siguen en carrera.
+  const allowed = useMemo(() => new Set(availableTeams), [availableTeams])
+  const teams = useMemo(() => TEAMS.filter((t) => allowed.has(t)), [allowed])
 
   const [formation, setFormation] = useState<Formation>(initialFormation ?? "3-1-2")
   const [picks, setPicks] = useState<Record<string, PitchPlayer>>(() => {
@@ -34,7 +39,7 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
     }
     return init
   })
-  const [team, setTeam] = useState<string>(TEAMS[0])
+  const [team, setTeam] = useState<string>(() => TEAMS.find((t) => allowed.has(t)) ?? TEAMS[0])
   const [query, setQuery] = useState("")
   const [saved, setSaved] = useState(true)
   const [isSaving, startSaving] = useTransition()
@@ -44,7 +49,7 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
 
   // Buscador de jugadores en todos los equipos (por nombre o selección, sin acentos).
   const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
-  const allPlayers = useMemo(() => [...PLAYER_BY_ID.values()], [])
+  const allPlayers = useMemo(() => [...PLAYER_BY_ID.values()].filter((p) => allowed.has(teamOf(p))), [allowed])
   const searching = query.trim().length >= 2
   const results = useMemo(() => {
     if (!searching) return []
@@ -311,7 +316,7 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
           Equipo
         </p>
         <div className="flex gap-1.5 overflow-x-auto pb-1.5">
-          {TEAMS.map((t) => (
+          {teams.map((t) => (
             <button
               key={t}
               onClick={() => setTeam(t)}

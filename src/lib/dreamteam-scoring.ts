@@ -91,16 +91,23 @@ export async function dreamTeamPointsByUser(): Promise<Map<string, number>> {
 }
 
 // Tabla específica del dream team: participantes (cualquiera con equipo) ordenados
-// por puntos acumulados.
-export type DTStandingRow = { id: string; name: string | null; image: string | null; points: number }
+// por puntos acumulados. `avg` = promedio de puntos por ronda ya puntuada.
+export type DTStandingRow = {
+  id: string; name: string | null; image: string | null
+  points: number; rounds: number; avg: number
+}
 export async function dreamTeamStandings(): Promise<DTStandingRow[]> {
   const [rounds, participants] = await Promise.all([
     computeRounds(),
     prisma.dreamTeam.findMany({ select: { userId: true } }),
   ])
   const pts = new Map<string, number>()
+  const cnt = new Map<string, number>()
   for (const standings of rounds.values())
-    for (const s of standings) pts.set(s.userId, (pts.get(s.userId) ?? 0) + s.points)
+    for (const s of standings) {
+      pts.set(s.userId, (pts.get(s.userId) ?? 0) + s.points)
+      cnt.set(s.userId, (cnt.get(s.userId) ?? 0) + 1)
+    }
 
   const ids = [...new Set(participants.map((p) => p.userId))]
   const users = await prisma.user.findMany({
@@ -108,8 +115,12 @@ export async function dreamTeamStandings(): Promise<DTStandingRow[]> {
     select: { id: true, name: true, image: true },
   })
   return users
-    .map((u) => ({ id: u.id, name: u.name, image: u.image, points: pts.get(u.id) ?? 0 }))
-    .sort((a, b) => b.points - a.points || (a.name ?? "").localeCompare(b.name ?? ""))
+    .map((u) => {
+      const points = pts.get(u.id) ?? 0
+      const n = cnt.get(u.id) ?? 0
+      return { id: u.id, name: u.name, image: u.image, points, rounds: n, avg: n ? points / n : 0 }
+    })
+    .sort((a, b) => b.points - a.points || b.avg - a.avg || (a.name ?? "").localeCompare(b.name ?? ""))
 }
 
 // "Mis dream teams": detalle por ronda del usuario (con cancha y puntaje).

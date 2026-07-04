@@ -31,6 +31,10 @@ export default async function DreamTeamPage() {
     ),
   ]
 
+  // Equipos disponibles para armar: solo los que juegan esta ronda (excluye
+  // eliminados y los que aún no llegaron a esta instancia).
+  const availableTeams = [...new Set(roundFixtures.flatMap((f) => [f.homeTeam, f.awayTeam]))]
+
   const dt = await prisma.dreamTeam.findUnique({
     where: { userId_round: { userId, round } },
     include: { picks: true },
@@ -67,6 +71,7 @@ export default async function DreamTeamPage() {
           initialFormation={initialFormation}
           initialPicks={initialPicks}
           lockedTeams={lockedTeams}
+          availableTeams={availableTeams}
           ratings={ratings}
         />
       </div>
@@ -98,7 +103,8 @@ export default async function DreamTeamPage() {
                 <tr className="border-b border-gray-200 bg-gray-100/50 text-left dark:border-white/5 dark:bg-neutral-800/50">
                   <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">#</th>
                   <th className="px-4 py-3 font-semibold text-gray-500 dark:text-neutral-400">Jugador</th>
-                  <th className="px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400">Pts</th>
+                  <th className="px-3 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400">Prom.</th>
+                  <th className="px-4 py-3 text-center font-semibold text-gray-500 dark:text-neutral-400">Pts para tabla general</th>
                 </tr>
               </thead>
               <tbody>
@@ -118,6 +124,9 @@ export default async function DreamTeamPage() {
                           )}
                           <span className="font-medium text-gray-800 dark:text-neutral-100">{row.name ?? "Anónimo"}</span>
                         </div>
+                      </td>
+                      <td className="px-3 py-3 text-center tabular-nums text-gray-600 dark:text-neutral-300">
+                        {row.rounds ? row.avg.toFixed(1) : "—"}
                       </td>
                       <td className="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">{row.points}</td>
                     </tr>
