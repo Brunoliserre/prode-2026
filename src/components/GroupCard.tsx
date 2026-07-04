@@ -359,10 +359,10 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
 
               </div>
 
-              {live && userId && (
+              {started && userId && (
                 <div className="flex items-center gap-1 px-2 pb-2.5 sm:gap-2 sm:px-3">
                   {/* Espaciadores que replican las columnas del partido para que el
-                      botón quede centrado bajo "EN VIVO" en desktop. */}
+                      botón quede centrado bajo el marcador/"EN VIVO" en desktop. */}
                   <div className="hidden shrink-0 sm:block sm:w-11" />
                   <div className="hidden flex-1 sm:block" />
                   <div className="flex flex-1 justify-center sm:w-28 sm:flex-none sm:shrink-0">
