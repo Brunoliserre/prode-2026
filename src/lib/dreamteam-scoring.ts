@@ -1,6 +1,6 @@
 import { prisma } from "./prisma"
 import { PLAYER_BY_ID } from "./dreamteam-mock"
-import type { Formation } from "./formations"
+import type { Formation, Pos } from "./formations"
 import type { PitchPlayer } from "@/components/DreamTeamPitch"
 
 export const KO_ORDER = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "THIRD_PLACE", "FINAL"]
@@ -261,4 +261,65 @@ export async function othersDreamTeams(): Promise<OthersRound[]> {
   }
   // Más nuevas primero (Final … 16vos).
   return out.reverse()
+}
+
+// Estadísticas del dream team: jugadores más elegidos y mejores puntajes.
+export type PickStat = {
+  playerId: string; name: string; club: string; position: Pos
+  count: number // veces elegido (todas las rondas)
+  rounds: string[] // etiquetas de rondas en las que fue elegido
+  photoUrl: string | null
+}
+export type RatingStat = {
+  playerId: string; name: string; club: string; position: Pos
+  round: string; roundLabel: string; rating: number
+  picks: number // en cuántos equipos estuvo esa ronda
+  photoUrl: string | null
+}
+
+export async function dreamTeamStats(): Promise<{ mostPicked: PickStat[]; topRated: RatingStat[] }> {
+  const [picks, scores] = await Promise.all([
+    prisma.dreamTeamPick.findMany({ include: { dreamTeam: { select: { round: true } } } }),
+    prisma.playerScore.findMany(),
+  ])
+
+  // Veces elegido por jugador (total) + rondas; y por (ronda,jugador) para anotar.
+  const byPlayer = new Map<string, { count: number; rounds: Set<string> }>()
+  const byRoundPlayer = new Map<string, number>()
+  for (const p of picks) {
+    const round = p.dreamTeam.round
+    const agg = byPlayer.get(p.playerId) ?? { count: 0, rounds: new Set<string>() }
+    agg.count++
+    agg.rounds.add(round)
+    byPlayer.set(p.playerId, agg)
+    byRoundPlayer.set(`${round}|${p.playerId}`, (byRoundPlayer.get(`${round}|${p.playerId}`) ?? 0) + 1)
+  }
+
+  const mostPicked: PickStat[] = []
+  for (const [playerId, { count, rounds }] of byPlayer) {
+    const base = PLAYER_BY_ID.get(playerId)
+    if (!base) continue
+    mostPicked.push({
+      playerId, name: base.name, club: base.club, position: base.position,
+      count,
+      rounds: [...rounds].sort((a, b) => KO_ORDER.indexOf(a) - KO_ORDER.indexOf(b)).map((r) => KO_LABEL[r] ?? r),
+      photoUrl: base.photoUrl ?? null,
+    })
+  }
+  mostPicked.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+
+  const topRated: RatingStat[] = []
+  for (const s of scores) {
+    const base = PLAYER_BY_ID.get(s.playerId)
+    if (!base) continue
+    topRated.push({
+      playerId: s.playerId, name: base.name, club: base.club, position: base.position,
+      round: s.round, roundLabel: KO_LABEL[s.round] ?? s.round, rating: s.rating,
+      picks: byRoundPlayer.get(`${s.round}|${s.playerId}`) ?? 0,
+      photoUrl: base.photoUrl ?? null,
+    })
+  }
+  topRated.sort((a, b) => b.rating - a.rating || b.picks - a.picks || a.name.localeCompare(b.name))
+
+  return { mostPicked, topRated }
 }

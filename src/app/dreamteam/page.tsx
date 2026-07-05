@@ -5,8 +5,9 @@ import Image from "next/image"
 import { DreamTeamBuilder } from "@/components/DreamTeamBuilder"
 import { MyDreamTeams } from "@/components/MyDreamTeams"
 import { OthersDreamTeams } from "@/components/OthersDreamTeams"
+import { DreamTeamStats } from "@/components/DreamTeamStats"
 import { FORMATIONS, type Formation } from "@/lib/formations"
-import { currentRound, KO_LABEL, myDreamTeams, dreamTeamStandings, othersDreamTeams } from "@/lib/dreamteam-scoring"
+import { currentRound, KO_LABEL, myDreamTeams, dreamTeamStandings, othersDreamTeams, dreamTeamStats } from "@/lib/dreamteam-scoring"
 
 export const revalidate = 0
 export const metadata = { title: "Dream Team" }
@@ -50,10 +51,11 @@ export default async function DreamTeamPage() {
   })
   const ratings = Object.fromEntries(roundScores.map((s) => [s.playerId, s.rating]))
 
-  const [myTeams, standings, others] = await Promise.all([
+  const [myTeams, standings, others, stats] = await Promise.all([
     myDreamTeams(userId),
     dreamTeamStandings(),
     othersDreamTeams(),
+    dreamTeamStats(),
   ])
 
   return (
@@ -136,6 +138,15 @@ export default async function DreamTeamPage() {
             </table>
           </div>
         )}
+      </div>
+
+      {/* Estadísticas */}
+      <div>
+        <h2 className="mb-1 text-lg font-bold text-gray-900 dark:text-white">Estadísticas</h2>
+        <p className="mb-2 text-sm text-gray-400 dark:text-neutral-500">
+          Jugadores más elegidos y los mejores puntajes cargados.
+        </p>
+        <DreamTeamStats mostPicked={stats.mostPicked} topRated={stats.topRated} />
       </div>
     </div>
   )
