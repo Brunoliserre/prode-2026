@@ -81,7 +81,7 @@ export default async function AdminPage() {
       <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">
         <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-white">Importar partidos desde API</h2>
         <p className="mb-4 text-sm text-gray-400 dark:text-neutral-500">
-          Crea los partidos del Mundial 2026 importándolos desde football-data.org. Solo crea partidos nuevos, no elimina los existentes.
+          Importa el calendario del Mundial 2026 desde ESPN (equipos, fecha y fase). Solo crea partidos nuevos y actualiza fechas; <span className="font-medium">no toca resultados</span> — esos se cargan con &ldquo;Sincronizar resultados&rdquo;.
         </p>
         <SyncFixturesButton />
       </section>
@@ -89,7 +89,7 @@ export default async function AdminPage() {
       <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/5 dark:bg-neutral-900">
         <h2 className="mb-1 text-base font-semibold text-gray-900 dark:text-white">Sincronizar resultados</h2>
         <p className="mb-4 text-sm text-gray-400 dark:text-neutral-500">
-          Importa resultados finalizados desde football-data.org y actualiza los puntos automáticamente.
+          Importa resultados finalizados desde ESPN (incluye definición por penales) y actualiza los puntos automáticamente.
         </p>
         <SyncResultsButton />
       </section>

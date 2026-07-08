@@ -16,16 +16,13 @@ export function SyncFixturesButton() {
       const res = await fetch("/api/sync-fixtures")
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Error desconocido")
-      const parts = []
-      if (data.created > 0) parts.push(`${data.created} partido(s) creado(s)`)
-      if (data.resultsUpdated > 0) parts.push(`${data.resultsUpdated} resultado(s) actualizado(s)`)
       setMessage(
-        parts.length > 0
-          ? parts.join(", ")
+        data.created > 0
+          ? `${data.created} partido(s) creado(s)`
           : `Sin novedades (${data.checked} partidos revisados)`,
       )
       setStatus("done")
-      if (data.created > 0 || data.resultsUpdated > 0) window.location.reload()
+      if (data.created > 0) window.location.reload()
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Error al sincronizar")
       setStatus("error")
