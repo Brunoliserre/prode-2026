@@ -16,6 +16,8 @@ type Fixture = {
   stage: string | null
   homeScore: number | null
   awayScore: number | null
+  homePens: number | null
+  awayPens: number | null
 }
 
 // Rondas de eliminatorias: orden y etiqueta corta.

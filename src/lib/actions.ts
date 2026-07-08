@@ -118,6 +118,7 @@ export async function getFixturePredictions(fixtureId: string) {
     select: {
       homeScore: true,
       awayScore: true,
+      points: true,
       user: { select: { id: true, name: true, image: true } },
     },
   })
@@ -129,6 +130,7 @@ export async function getFixturePredictions(fixtureId: string) {
       image: p.user.image,
       homeScore: p.homeScore,
       awayScore: p.awayScore,
+      points: p.points,
     }))
     .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
 }
@@ -271,9 +273,18 @@ export async function setFixtureResult(formData: FormData) {
 
   if (!fixtureId || isNaN(homeScore) || isNaN(awayScore)) throw new Error("Datos inválidos")
 
+  // Penales (opcional): solo aplican en mata-mata que terminó empatado en el
+  // tiempo regular. Se guardan aparte; el puntaje se calcula con el regular.
+  const rawHomePens = formData.get("homePens")
+  const rawAwayPens = formData.get("awayPens")
+  const homePens = rawHomePens != null && rawHomePens !== "" ? Number(rawHomePens) : null
+  const awayPens = rawAwayPens != null && rawAwayPens !== "" ? Number(rawAwayPens) : null
+  if ((homePens != null && isNaN(homePens)) || (awayPens != null && isNaN(awayPens)))
+    throw new Error("Penales inválidos")
+
   const fixture = await prisma.fixture.update({
     where: { id: fixtureId },
-    data: { homeScore, awayScore },
+    data: { homeScore, awayScore, homePens, awayPens },
   })
 
   const predictions = await prisma.prediction.findMany({ where: { fixtureId } })

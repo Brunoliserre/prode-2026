@@ -7,6 +7,7 @@ import { cn, matchResult } from "@/lib/utils"
 import { getCountryCode, esTeamName } from "@/lib/flags"
 import { submitPrediction } from "@/lib/actions"
 import { MatchPredictionsModal } from "./MatchPredictionsModal"
+import { PointsBadge } from "./PointsBadge"
 import * as Flags from "country-flag-icons/react/3x2"
 
 type Fixture = {
@@ -18,6 +19,8 @@ type Fixture = {
   group: string | null
   homeScore: number | null
   awayScore: number | null
+  homePens: number | null
+  awayPens: number | null
 }
 
 type Prediction = { homeScore: number; awayScore: number; points: number }
@@ -138,6 +141,11 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
             const canPredict = !!userId && !started && !finished
 
             const live = started && !finished
+            // Definición por penales (mata-mata): "4-3" para mostrar junto al resultado.
+            const pens =
+              finished && fixture.homePens != null && fixture.awayPens != null
+                ? `${fixture.homePens}-${fixture.awayPens}`
+                : null
 
             return (
               <div key={fixture.id} className="border-b border-gray-100 last:border-0 dark:border-white/5">
@@ -149,6 +157,11 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                   <div className="flex items-center gap-2">
                     <StatusBadge started={started} finished={finished} matchday={fixture.matchday} group={dateMode ? fixture.group : undefined} />
                     {!started && !finished && <Kickoff date={fixture.matchDate} mounted={mounted} />}
+                    {pens && (
+                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-sm font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                        pen. {pens}
+                      </span>
+                    )}
                   </div>
 
                   {canPredict ? (
@@ -278,7 +291,14 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                 {/* Center */}
                 <div className="w-10 shrink-0 text-center sm:w-28">
                   {finished ? (
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">{fixture.homeScore}–{fixture.awayScore}</span>
+                    <span className="inline-flex flex-col items-center leading-tight">
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">{fixture.homeScore}–{fixture.awayScore}</span>
+                      {pens && (
+                        <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                          pen. {pens}
+                        </span>
+                      )}
+                    </span>
                   ) : started ? (
                     <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400">
                       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
@@ -371,6 +391,7 @@ export function GroupCard({ group, matches, predMap, userId, now: initialNow, em
                       homeTeam={fixture.homeTeam}
                       awayTeam={fixture.awayTeam}
                       currentUserId={userId}
+                      finished={finished}
                     />
                   </div>
                   <div className="hidden flex-1 sm:block" />
@@ -407,16 +428,3 @@ function StatusBadge({ started, finished, matchday, group }: { started: boolean;
   )
 }
 
-function PointsBadge({ points }: { points: number }) {
-  return (
-    <span className={cn(
-      "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-      points >= 4  && "bg-emerald-500/15 text-emerald-500 dark:text-emerald-400",
-      points >= 2 && points < 4 && "bg-blue-500/15 text-blue-500 dark:text-blue-400",
-      points === 1 && "bg-amber-500/15 text-amber-500 dark:text-amber-400",
-      points === 0 && "bg-red-500/10 text-red-500",
-    )}>
-      {points > 0 ? `+${points}` : "0"}
-    </span>
-  )
-}

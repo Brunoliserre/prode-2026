@@ -39,6 +39,7 @@ type EspnEvent = {
     competitors: {
       homeAway: "home" | "away"
       score?: string
+      shootoutScore?: number // definición por penales (solo si fue a penales)
       team: { displayName: string }
     }[]
   }[]
@@ -86,9 +87,13 @@ export async function GET(req: NextRequest) {
     const away = competitors.find((c) => c.homeAway === "away")
     if (!home || !away) continue
 
+    // score = resultado de tiempo regular/alargue (base del puntaje). En partidos
+    // definidos por penales, shootoutScore trae la tanda; se guarda aparte.
     let homeScore = Number(home.score)
     let awayScore = Number(away.score)
     if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) continue
+    let homePens = home.shootoutScore != null ? Number(home.shootoutScore) : null
+    let awayPens = away.shootoutScore != null ? Number(away.shootoutScore) : null
 
     finished++
 
@@ -110,18 +115,27 @@ export async function GET(req: NextRequest) {
           normalize(f.awayTeam) === homeNorm &&
           sameUtcDay(new Date(f.matchDate), evDate),
       )
-      if (fixture) [homeScore, awayScore] = [awayScore, homeScore]
+      if (fixture) {
+        [homeScore, awayScore] = [awayScore, homeScore]
+        ;[homePens, awayPens] = [awayPens, homePens]
+      }
     }
 
     if (!fixture) {
       unmatched.push(`${home.team.displayName} vs ${away.team.displayName}`)
       continue
     }
-    if (fixture.homeScore === homeScore && fixture.awayScore === awayScore) continue
+    if (
+      fixture.homeScore === homeScore &&
+      fixture.awayScore === awayScore &&
+      fixture.homePens === homePens &&
+      fixture.awayPens === awayPens
+    )
+      continue
 
     await prisma.fixture.update({
       where: { id: fixture.id },
-      data: { homeScore, awayScore },
+      data: { homeScore, awayScore, homePens, awayPens },
     })
 
     const predictions = await prisma.prediction.findMany({

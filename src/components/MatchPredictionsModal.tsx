@@ -6,6 +6,7 @@ import { Eye, Loader, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getFixturePredictions } from "@/lib/actions"
 import { esTeamName } from "@/lib/flags"
+import { PointsBadge } from "./PointsBadge"
 
 type UserPrediction = {
   userId: string
@@ -13,6 +14,7 @@ type UserPrediction = {
   image: string | null
   homeScore: number
   awayScore: number
+  points: number
 }
 
 interface Props {
@@ -20,9 +22,10 @@ interface Props {
   homeTeam: string
   awayTeam: string
   currentUserId?: string
+  finished?: boolean
 }
 
-export function MatchPredictionsModal({ fixtureId, homeTeam, awayTeam, currentUserId }: Props) {
+export function MatchPredictionsModal({ fixtureId, homeTeam, awayTeam, currentUserId, finished }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
@@ -116,9 +119,12 @@ export function MatchPredictionsModal({ fixtureId, homeTeam, awayTeam, currentUs
                         )}
                       </span>
                     </div>
-                    <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
-                      {p.homeScore}–{p.awayScore}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className="font-mono text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+                        {p.homeScore}–{p.awayScore}
+                      </span>
+                      {finished && <PointsBadge points={p.points} />}
+                    </div>
                   </div>
                 ))
               )}
