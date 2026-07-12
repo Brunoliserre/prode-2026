@@ -214,6 +214,13 @@ export async function awardTournamentPoints(category: string, correctValue: stri
     ),
   )
 
+  // Guardar el resultado real para poder mostrarlo aunque nadie lo haya acertado.
+  await prisma.tournamentResult.upsert({
+    where: { category },
+    create: { category, value: correctValue },
+    update: { value: correctValue },
+  })
+
   revalidatePath("/")
   revalidatePath("/admin")
   revalidatePath("/profile")

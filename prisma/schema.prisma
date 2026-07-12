@@ -97,6 +97,13 @@ model TournamentPick {
   @@unique([userId, category])
 }
 
+// Resultado real de cada premio del torneo (lo carga el admin). Permite mostrar
+// el ganador aunque nadie lo haya acertado, o "N/A" (sin premio).
+model TournamentResult {
+  category String @id
+  value    String // team/player ganador, o "N/A"
+}
+
 // Dream team de eliminatorias: 1 por usuario por ronda (LAST_32, LAST_16, ...).
 model DreamTeam {
   id        String          @id @default(cuid())

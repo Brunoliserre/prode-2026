@@ -195,9 +195,11 @@ async function LeaderboardPage() {
   const historyByPartido = { labels: finishedFx.map((_, i) => String(i + 1)), series: seriesFrom(partidoSnaps) }
   const showHistory = finishedFx.length >= 2
 
-  // Resultados de torneo (premios): el ganador de cada categoría se deriva del
-  // pick que sumó puntos; si nadie lo tiene, queda "aún sin ganador". Y se listan
-  // los participantes del prode que la acertaron.
+  // Resultados de torneo (premios). El ganador sale del resultado real guardado
+  // por el admin; si esa categoría es vieja (aún sin guardar) se deriva del pick
+  // que acertó. Además se listan los participantes del prode que la acertaron.
+  const storedResults = await prisma.tournamentResult.findMany()
+  const storedByCategory = new Map(storedResults.map((r) => [r.category, r.value]))
   const winnerByCategory = new Map<string, string>()
   const scorersByCategory = new Map<string, string[]>()
   for (const u of users)
@@ -209,12 +211,14 @@ async function LeaderboardPage() {
         scorersByCategory.set(p.category, list)
       }
   const tournamentResults = TOURNAMENT_CATEGORIES.map((c) => {
-    const w = winnerByCategory.get(c.key) ?? null
+    const raw = storedByCategory.get(c.key) ?? winnerByCategory.get(c.key) ?? null
+    const winner =
+      raw == null ? null : raw.trim().toLowerCase() === "n/a" ? "Nadie" : c.type === "team" ? esTeamName(raw) : raw
     return {
       key: c.key,
       label: c.label,
       icon: c.icon,
-      winner: w == null ? null : c.type === "team" ? esTeamName(w) : w,
+      winner,
       scorers: (scorersByCategory.get(c.key) ?? []).sort((a, b) => a.localeCompare(b)),
       points: PICK_POINTS[c.key] ?? 0,
     }
