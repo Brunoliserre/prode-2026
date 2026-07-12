@@ -1,4 +1,5 @@
 import { getCountryCode, esTeamName } from "@/lib/flags"
+import { prisma } from "@/lib/prisma"
 import * as Flags from "country-flag-icons/react/3x2"
 
 export const revalidate = 900
@@ -37,12 +38,6 @@ type Scorer = {
   penalties: number
 }
 
-type Match = {
-  homeTeam: { name: string }
-  awayTeam: { name: string }
-  score: { fullTime: { home: number | null; away: number | null } }
-}
-
 type EspnEvent = {
   status: { type: { state: string } }
   competitions: {
@@ -69,16 +64,6 @@ async function fetchScorers(apiKey: string): Promise<Scorer[]> {
   return data.scorers ?? []
 }
 
-async function fetchMatches(apiKey: string): Promise<Match[]> {
-  const res = await fetch(
-    "https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED",
-    { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 900 } },
-  )
-  if (!res.ok) return []
-  const data = await res.json()
-  return data.matches ?? []
-}
-
 // Cards come from ESPN: the football-data free tier doesn't include bookings
 async function fetchEspnEvents(): Promise<EspnEvent[]> {
   const res = await fetch(
@@ -99,22 +84,32 @@ export default async function EstadisticasPage() {
     return <p className="text-gray-400 dark:text-neutral-500">API key no configurada.</p>
   }
 
-  const [scorers, matches, espnEvents] = await Promise.all([
+  // Goles desde nuestras fixtures: homeScore/awayScore son el resultado de tiempo
+  // regular/alargue (sin la tanda de penales), así que no cuentan esos goles.
+  const [scorers, espnEvents, fixtures] = await Promise.all([
     fetchScorers(apiKey),
-    fetchMatches(apiKey),
     fetchEspnEvents(),
+    prisma.fixture.findMany({
+      where: { homeScore: { not: null }, awayScore: { not: null } },
+      select: { homeTeam: true, awayTeam: true, homeScore: true, awayScore: true },
+    }),
   ])
 
-  // Goles por selección
+  // Goles a favor y en contra por selección (sin penales)
   const teamGoals: Record<string, number> = {}
-  for (const m of matches) {
-    const h = m.score.fullTime.home
-    const a = m.score.fullTime.away
-    if (h == null || a == null) continue
-    teamGoals[m.homeTeam.name] = (teamGoals[m.homeTeam.name] ?? 0) + h
-    teamGoals[m.awayTeam.name] = (teamGoals[m.awayTeam.name] ?? 0) + a
+  const teamGoalsAgainst: Record<string, number> = {}
+  for (const f of fixtures) {
+    const h = f.homeScore!
+    const a = f.awayScore!
+    teamGoals[f.homeTeam] = (teamGoals[f.homeTeam] ?? 0) + h
+    teamGoals[f.awayTeam] = (teamGoals[f.awayTeam] ?? 0) + a
+    teamGoalsAgainst[f.homeTeam] = (teamGoalsAgainst[f.homeTeam] ?? 0) + a
+    teamGoalsAgainst[f.awayTeam] = (teamGoalsAgainst[f.awayTeam] ?? 0) + h
   }
   const teamGoalRows = Object.entries(teamGoals)
+    .sort(([, a], [, b]) => b - a)
+    .map(([team, goals]) => ({ team, goals }))
+  const teamGoalsAgainstRows = Object.entries(teamGoalsAgainst)
     .sort(([, a], [, b]) => b - a)
     .map(([team, goals]) => ({ team, goals }))
 
@@ -152,7 +147,7 @@ export default async function EstadisticasPage() {
     .map(([team, c]) => ({ team, yellow: c.yellow, red: c.red, points: c.yellow + c.red * 3 }))
     .sort((a, b) => a.points - b.points || a.team.localeCompare(b.team))
 
-  const empty = scorers.length === 0 && matches.length === 0 && fairPlayRows.length === 0
+  const empty = scorers.length === 0 && teamGoalRows.length === 0 && fairPlayRows.length === 0
 
   return (
     <div className="space-y-8">
@@ -209,6 +204,27 @@ export default async function EstadisticasPage() {
             headers={[{ label: "Selección" }, { label: "Goles", center: true }]}
           >
             {teamGoalRows.map((r, i) => (
+              <tr key={r.team} className="border-b border-gray-100 last:border-0 dark:border-white/5">
+                <td className="px-3 py-2.5 font-mono text-xs text-gray-400 dark:text-neutral-500">{i + 1}</td>
+                <td className="max-w-0 px-3 py-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <TeamFlag team={r.team} />
+                    <span className="truncate text-sm font-medium text-gray-800 dark:text-neutral-100">{esTeamName(localName(r.team))}</span>
+                  </div>
+                </td>
+                <td className="w-14 px-2 py-2.5 text-center font-bold text-gray-900 dark:text-white">{r.goals}</td>
+              </tr>
+            ))}
+          </StatsTable>
+
+          {/* Goles recibidos por selección */}
+          <StatsTable
+            title="Goles Recibidos por Selección"
+            icon="🧤"
+            empty={teamGoalsAgainstRows.length === 0}
+            headers={[{ label: "Selección" }, { label: "Recibidos", center: true }]}
+          >
+            {teamGoalsAgainstRows.map((r, i) => (
               <tr key={r.team} className="border-b border-gray-100 last:border-0 dark:border-white/5">
                 <td className="px-3 py-2.5 font-mono text-xs text-gray-400 dark:text-neutral-500">{i + 1}</td>
                 <td className="max-w-0 px-3 py-2.5">
