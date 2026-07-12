@@ -58,6 +58,16 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
   }, [query, searching, allPlayers])
   const pickedIds = new Set(Object.values(picks).map((p) => p.id))
   const filled = Object.keys(picks).length
+
+  // Máximo 2 jugadores por equipo. Solo se aplica si la ronda tiene al menos 4
+  // equipos (si no, no alcanzarían para 7 jugadores y se relaja).
+  const capPerTeam = teams.length >= 4 ? 2 : Infinity
+  const teamCounts = useMemo(() => {
+    const c: Record<string, number> = {}
+    for (const p of Object.values(picks)) c[teamOf(p)] = (c[teamOf(p)] ?? 0) + 1
+    return c
+  }, [picks])
+  const teamFull = (t: string) => (teamCounts[t] ?? 0) >= capPerTeam
   // Picks con el rating de la ronda (si ya está cargado) para mostrar en la cancha.
   const pitchPicks = useMemo(() => {
     if (!ratings) return picks
@@ -104,7 +114,7 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
   }
 
   function assign(p: PitchPlayer) {
-    if (pickedIds.has(p.id) || isLocked(p)) return
+    if (pickedIds.has(p.id) || isLocked(p) || teamFull(teamOf(p))) return
     for (let i = 0; i < counts[p.position]; i++) {
       const k = `${p.position}${i}`
       if (!picks[k]) {
@@ -282,7 +292,8 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
               {results.map((p) => {
                 const picked = pickedIds.has(p.id)
                 const lockedP = locked.has(teamOf(p))
-                const disabled = picked || posFull(p.position) || lockedP
+                const teamFullP = !picked && teamFull(teamOf(p))
+                const disabled = picked || posFull(p.position) || lockedP || teamFullP
                 return (
                   <button
                     key={p.id}
@@ -300,6 +311,7 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
                     <span className="min-w-0 truncate">{p.name}</span>
                     <span className="flex shrink-0 items-center gap-1.5 text-[10px] text-gray-400 dark:text-neutral-500">
                       {lockedP && <Lock className="h-3 w-3 text-amber-500" />}
+                      {teamFullP && <span className="font-semibold text-amber-500">2/2</span>}
                       {p.club} · {POS_LABEL[p.position]}
                     </span>
                   </button>
@@ -335,11 +347,15 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
       </div>
 
       {/* Pool de jugadores del equipo */}
-      {teamLocked && (
+      {teamLocked ? (
         <p className="-mb-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
           <Lock className="h-3.5 w-3.5" /> {esTeamName(team)} ya juega — sus jugadores están bloqueados.
         </p>
-      )}
+      ) : teamFull(team) ? (
+        <p className="-mb-2 text-xs text-amber-600 dark:text-amber-400">
+          Ya elegiste 2 de {esTeamName(team)} — máximo 2 por equipo.
+        </p>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {POS_ORDER.map((pos) => (
           <div key={pos} className="rounded-xl border border-gray-200 bg-white p-3 dark:border-white/5 dark:bg-neutral-900">
@@ -356,7 +372,7 @@ export function DreamTeamBuilder({ round, roundLabel, initialFormation, initialP
                 .filter((p) => p.position === pos)
                 .map((p) => {
                   const picked = pickedIds.has(p.id)
-                  const disabled = picked || posFull(pos) || teamLocked
+                  const disabled = picked || posFull(pos) || teamLocked || (!picked && teamFull(team))
                   return (
                     <button
                       key={p.id}

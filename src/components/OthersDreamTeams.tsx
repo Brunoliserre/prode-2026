@@ -147,14 +147,21 @@ export function OthersDreamTeams({ rounds }: { rounds: OthersRound[] }) {
             >
               <X className="h-4 w-4" />
             </button>
-            <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
+            <div className="mb-3 flex items-center gap-2.5 pr-8">
               <Avatar name={open.team.name} image={open.team.image} />
-              {open.team.name ?? "Anónimo"}
-              <span className="text-sm font-normal text-gray-400 dark:text-neutral-500">
-                · {open.label} · {open.team.formation}
-                {open.team.points != null && ` · ${open.team.position}º · +${open.team.points} pts`}
-              </span>
-            </h3>
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-gray-900 dark:text-white">{open.team.name ?? "Anónimo"}</p>
+                <p className="text-xs text-gray-400 dark:text-neutral-500">
+                  {open.label} · {open.team.formation}
+                  {open.team.points != null && ` · ${open.team.position}º · +${open.team.points} a la general`}
+                </p>
+              </div>
+              {open.team.score != null && (
+                <span className="ml-auto shrink-0 rounded-lg bg-emerald-100 px-3 py-1.5 text-sm font-bold tabular-nums text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                  {open.team.score.toFixed(1)} pts
+                </span>
+              )}
+            </div>
             <DreamTeamPitch formation={open.team.formation} picks={open.team.picks} />
           </div>
         </div>

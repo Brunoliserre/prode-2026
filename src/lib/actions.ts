@@ -328,18 +328,33 @@ export async function saveDreamTeam(
     seen.add(p.slot)
   }
 
-  // Lock por equipo: no se pueden modificar jugadores de equipos cuyo partido
-  // de esta ronda ya arrancó.
+  const teamOf = (pid: string) => pid.slice(0, pid.lastIndexOf("-"))
+
   const now = new Date()
   const rf = await prisma.fixture.findMany({
     where: { stage: round },
     select: { homeTeam: true, awayTeam: true, matchDate: true },
   })
+
+  // Máximo 2 jugadores por equipo (solo si la ronda tiene al menos 4 equipos; en
+  // fases con menos no alcanzarían para 7 y se relaja).
+  const roundTeams = new Set(rf.flatMap((f) => [f.homeTeam, f.awayTeam]))
+  if (roundTeams.size >= 4) {
+    const perTeam = new Map<string, number>()
+    for (const p of picks) {
+      const t = teamOf(p.playerId)
+      const n = (perTeam.get(t) ?? 0) + 1
+      perTeam.set(t, n)
+      if (n > 2) throw new Error("Máximo 2 jugadores por equipo")
+    }
+  }
+
+  // Lock por equipo: no se pueden modificar jugadores de equipos cuyo partido
+  // de esta ronda ya arrancó.
   const lockedTeams = new Set(
     rf.filter((f) => f.matchDate <= now).flatMap((f) => [f.homeTeam, f.awayTeam]),
   )
   if (lockedTeams.size) {
-    const teamOf = (pid: string) => pid.slice(0, pid.lastIndexOf("-"))
     const prev = await prisma.dreamTeam.findUnique({
       where: { userId_round: { userId, round } },
       include: { picks: true },

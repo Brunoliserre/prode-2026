@@ -128,6 +128,7 @@ export default function ReglasPage() {
           </table>
         </div>
         <p className="mt-3 text-xs text-gray-400 dark:text-neutral-500">
+          <span className="font-medium text-gray-500 dark:text-neutral-400">Máximo 2 jugadores por equipo.</span>{" "}
           La relación entre puestos es la misma en todas las fases (sube junto con el pleno). Empates comparten
           puesto y puntos. Los jugadores de un equipo se bloquean cuando arranca su partido.
         </p>
