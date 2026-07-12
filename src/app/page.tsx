@@ -1,10 +1,12 @@
 import { auth, signIn } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getWCEmblem } from "@/lib/competition"
-import { cn } from "@/lib/utils"
+import { cn, PICK_POINTS } from "@/lib/utils"
+import { esTeamName } from "@/lib/flags"
 import { ArrowUp, ArrowDown } from "lucide-react"
 import { RankHistoryChart, type RankSeries } from "@/components/RankHistoryChart"
 import { DreamTeamModal } from "@/components/DreamTeamModal"
+import { TournamentResultsTable, TOURNAMENT_CATEGORIES } from "@/components/TournamentResultsTable"
 import { dreamTeamPointsByUser } from "@/lib/dreamteam-scoring"
 import Image from "next/image"
 
@@ -193,6 +195,23 @@ async function LeaderboardPage() {
   const historyByPartido = { labels: finishedFx.map((_, i) => String(i + 1)), series: seriesFrom(partidoSnaps) }
   const showHistory = finishedFx.length >= 2
 
+  // Resultados de torneo (premios): el ganador de cada categoría se deriva del
+  // pick que sumó puntos; si nadie lo tiene, queda "aún sin ganador".
+  const winnerByCategory = new Map<string, string>()
+  for (const u of users)
+    for (const p of u.tournamentPicks)
+      if (p.points > 0 && !winnerByCategory.has(p.category)) winnerByCategory.set(p.category, p.value)
+  const tournamentResults = TOURNAMENT_CATEGORIES.map((c) => {
+    const w = winnerByCategory.get(c.key) ?? null
+    return {
+      key: c.key,
+      label: c.label,
+      icon: c.icon,
+      winner: w == null ? null : c.type === "team" ? esTeamName(w) : w,
+      points: PICK_POINTS[c.key] ?? 0,
+    }
+  })
+
   return (
     <div>
       <DreamTeamModal />
@@ -259,6 +278,13 @@ async function LeaderboardPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {rows.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">Resultados del torneo</h2>
+          <TournamentResultsTable rows={tournamentResults} />
         </div>
       )}
 
