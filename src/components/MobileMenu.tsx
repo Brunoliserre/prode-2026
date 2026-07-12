@@ -14,11 +14,12 @@ interface Props {
 }
 
 const LINKS = [
-  { href: "/",             label: "Tabla" },
-  { href: "/predicciones", label: "Predicciones" },
-  { href: "/dreamteam",    label: "Dream Team" },
-  { href: "/estadisticas", label: "Estadísticas" },
-  { href: "/reglas",       label: "Reglas" },
+  { href: "/",                    label: "Tabla" },
+  { href: "/predicciones",        label: "Predicciones" },
+  { href: "/predicciones-torneo", label: "Predicciones de Torneo" },
+  { href: "/dreamteam",           label: "Dream Team" },
+  { href: "/estadisticas",        label: "Estadísticas" },
+  { href: "/reglas",              label: "Reglas" },
 ]
 
 export function MobileMenu({ isAdmin, isLoggedIn, userName, userImage, authForm }: Props) {

@@ -69,6 +69,9 @@ export async function NavBar({ emblemUrl }: { emblemUrl?: string }) {
           <Link href="/predicciones" className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white">
             Predicciones
           </Link>
+          <Link href="/predicciones-torneo" className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white">
+            Torneo
+          </Link>
           <Link href="/dreamteam" className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white">
             Dream Team
           </Link>
