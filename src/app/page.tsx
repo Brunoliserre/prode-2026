@@ -196,11 +196,18 @@ async function LeaderboardPage() {
   const showHistory = finishedFx.length >= 2
 
   // Resultados de torneo (premios): el ganador de cada categoría se deriva del
-  // pick que sumó puntos; si nadie lo tiene, queda "aún sin ganador".
+  // pick que sumó puntos; si nadie lo tiene, queda "aún sin ganador". Y se listan
+  // los participantes del prode que la acertaron.
   const winnerByCategory = new Map<string, string>()
+  const scorersByCategory = new Map<string, string[]>()
   for (const u of users)
     for (const p of u.tournamentPicks)
-      if (p.points > 0 && !winnerByCategory.has(p.category)) winnerByCategory.set(p.category, p.value)
+      if (p.points > 0) {
+        if (!winnerByCategory.has(p.category)) winnerByCategory.set(p.category, p.value)
+        const list = scorersByCategory.get(p.category) ?? []
+        list.push(u.name ?? "Anónimo")
+        scorersByCategory.set(p.category, list)
+      }
   const tournamentResults = TOURNAMENT_CATEGORIES.map((c) => {
     const w = winnerByCategory.get(c.key) ?? null
     return {
@@ -208,6 +215,7 @@ async function LeaderboardPage() {
       label: c.label,
       icon: c.icon,
       winner: w == null ? null : c.type === "team" ? esTeamName(w) : w,
+      scorers: (scorersByCategory.get(c.key) ?? []).sort((a, b) => a.localeCompare(b)),
       points: PICK_POINTS[c.key] ?? 0,
     }
   })
