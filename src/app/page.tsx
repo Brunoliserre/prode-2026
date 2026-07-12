@@ -73,11 +73,12 @@ async function LeaderboardPage() {
     orderBy: { name: "asc" },
   })
 
-  // Partidos finalizados, en orden cronológico.
+  // Partidos finalizados, en orden cronológico (incluye eliminatorias, que no
+  // tienen matchday).
   const finishedFx = await prisma.fixture.findMany({
-    where: { homeScore: { not: null }, awayScore: { not: null }, matchday: { not: null } },
+    where: { homeScore: { not: null }, awayScore: { not: null } },
     orderBy: [{ matchDate: "asc" }, { id: "asc" }],
-    select: { id: true, matchday: true },
+    select: { id: true, matchday: true, stage: true },
   })
 
   // Puntos de torneo (estáticos) y puntos de cada usuario por fixture.
@@ -172,9 +173,8 @@ async function LeaderboardPage() {
     .map((r, i) => ({ ...r, delta: hasPrev ? prevPos!.get(r.id)! - (i + 1) : null }))
 
   // Evolución de posiciones, en dos granularidades:
-  //   · por fecha   → puesto al cierre de cada jornada jugada
+  //   · por fecha   → puesto al cierre de cada jornada / ronda jugada
   //   · por partido → puesto después de cada partido finalizado (cronológico)
-  const playedMds = [...new Set(finishedFx.map((f) => f.matchday!))].sort((a, b) => a - b)
   const seriesFrom = (snaps: Map<string, number>[]): RankSeries[] =>
     rows.map((r) => ({
       id: r.id,
@@ -182,8 +182,24 @@ async function LeaderboardPage() {
       positions: snaps.map((s) => s.get(r.id)!),
     }))
 
-  const fechaSnaps = playedMds.map((md) =>
-    standingsAt(new Set(finishedFx.filter((f) => f.matchday! <= md).map((f) => f.id))),
+  // Agrupamiento "por fecha": jornada de grupos (Fecha N) o ronda de eliminatorias.
+  const KO_LABEL: Record<string, string> = {
+    LAST_32: "16vos", LAST_16: "8vos", QUARTER_FINALS: "4tos",
+    SEMI_FINALS: "Semis", THIRD_PLACE: "3° puesto", FINAL: "Final",
+  }
+  const groupKeyOf = (f: (typeof finishedFx)[number]) =>
+    f.matchday != null ? `md${f.matchday}` : `st${f.stage}`
+  const groupLabelOf = (f: (typeof finishedFx)[number]) =>
+    f.matchday != null ? `Fecha ${f.matchday}` : KO_LABEL[f.stage ?? ""] ?? "Eliminatorias"
+  const groups: { key: string; label: string }[] = []
+  const seenGroup = new Set<string>()
+  for (const f of finishedFx) {
+    const key = groupKeyOf(f)
+    if (!seenGroup.has(key)) { seenGroup.add(key); groups.push({ key, label: groupLabelOf(f) }) }
+  }
+  const groupIndex = new Map(groups.map((g, i) => [g.key, i]))
+  const fechaSnaps = groups.map((_, gi) =>
+    standingsAt(new Set(finishedFx.filter((f) => groupIndex.get(groupKeyOf(f))! <= gi).map((f) => f.id))),
   )
   const counted = new Set<string>()
   const partidoSnaps = finishedFx.map((f) => {
@@ -191,7 +207,7 @@ async function LeaderboardPage() {
     return standingsAt(counted)
   })
 
-  const historyByFecha = { labels: playedMds.map((md) => `Fecha ${md}`), series: seriesFrom(fechaSnaps) }
+  const historyByFecha = { labels: groups.map((g) => g.label), series: seriesFrom(fechaSnaps) }
   const historyByPartido = { labels: finishedFx.map((_, i) => String(i + 1)), series: seriesFrom(partidoSnaps) }
   const showHistory = finishedFx.length >= 2
 
