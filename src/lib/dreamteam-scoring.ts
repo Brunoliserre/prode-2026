@@ -1,4 +1,5 @@
 import { prisma } from "./prisma"
+import { plenoValue } from "./utils"
 import { PLAYER_BY_ID } from "./dreamteam-mock"
 import type { Formation, Pos } from "./formations"
 import type { PitchPlayer } from "@/components/DreamTeamPitch"
@@ -24,10 +25,13 @@ export async function currentRound(): Promise<string> {
   )
 }
 
-// Puntos por puesto en cada ronda finalizada (escala fija).
-// 1º 8 · 2º 6 · 3º 5 · 4º 4 · 5º 3 · 6º 2 · 7º y siguientes 1. No participar: nada.
-const ptsForRank = (rank: number) =>
-  rank === 1 ? 8 : rank === 2 ? 6 : rank === 3 ? 5 : rank === 4 ? 4 : rank === 5 ? 3 : rank === 6 ? 2 : 1
+// Puntos por puesto en cada ronda finalizada. El 1º vale el PLENO de esa ronda
+// (8 en 16vos … 12 en la final); del 2º en adelante es fijo: 6·5·4·3·2·1 (7º+).
+// No participar: nada.
+const ptsForRank = (rank: number, round: string) =>
+  rank === 1
+    ? plenoValue(round)
+    : rank === 2 ? 6 : rank === 3 ? 5 : rank === 4 ? 4 : rank === 5 ? 3 : rank === 6 ? 2 : 1
 
 export type RoundStanding = { userId: string; score: number; position: number; points: number }
 
@@ -38,7 +42,7 @@ export async function finalizedRounds(): Promise<Set<string>> {
 }
 
 // Standings por ronda — SOLO rondas finalizadas. Por ronda: suma de los 7 ratings
-// define el puesto; los puntos por puesto salen de ptsForRank (1º 8 … 7º+ 1).
+// define el puesto; los puntos por puesto salen de ptsForRank (1º = pleno, 2º+ fijo).
 // Empates comparten puesto y puntos. Solo equipos completos (7).
 async function computeRounds(): Promise<Map<string, RoundStanding[]>> {
   const [teams, scores, finalized] = await Promise.all([
@@ -71,7 +75,7 @@ async function computeRounds(): Promise<Map<string, RoundStanding[]>> {
     while (i < ranked.length) {
       let j = i
       while (j + 1 < ranked.length && ranked[j + 1].score === ranked[i].score) j++
-      const points = ptsForRank(i + 1)
+      const points = ptsForRank(i + 1, round)
       for (let k = i; k <= j; k++)
         standings.push({ userId: ranked[k].userId, score: ranked[k].score, position: i + 1, points })
       i = j + 1
