@@ -89,9 +89,9 @@ export default function ReglasPage() {
           En cada ronda armás un equipo de 7 (1 arquero + la formación que elijas) con jugadores de las
           selecciones en carrera. Cada jugador suma su <span className="font-medium">rating de FotMob</span>;
           la suma define tu puesto de la ronda. El <span className="font-medium">1º puesto vale el pleno de
-          esa fase</span> (igual que un pronóstico exacto), y del 2º en adelante la escala es fija:
+          esa fase</span> (igual que un pronóstico exacto), el 2º vale −2 y de ahí baja 1 por puesto:
         </p>
-        <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-white/5">
+        <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-white/5">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 text-left dark:bg-neutral-800/50">
@@ -102,22 +102,24 @@ export default function ReglasPage() {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-t border-gray-100 dark:border-white/5">
-                <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-100">1º</td>
-                {KO_ROUNDS.map(([label, stage]) => (
-                  <td key={label} className="px-3 py-2 text-center font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-                    +{plenoValue(stage)}
-                  </td>
-                ))}
-              </tr>
-              {[["2º", 6], ["3º", 5], ["4º", 4], ["5º", 3], ["6º", 2], ["7º en adelante", 1]].map(([label, pts]) => (
-                <tr key={label} className="border-t border-gray-100 dark:border-white/5">
-                  <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-100">{label}</td>
-                  <td colSpan={KO_ROUNDS.length} className="px-3 py-2 text-center tabular-nums text-gray-700 dark:text-neutral-200">
-                    +{pts} <span className="text-xs text-gray-400 dark:text-neutral-500">(en todas las fases)</span>
-                  </td>
-                </tr>
-              ))}
+              {([["1º", 0], ["2º", 2], ["3º", 3], ["4º", 4], ["5º", 5], ["6º", 6], ["7º+", 7]] as const).map(
+                ([label, offset], i) => (
+                  <tr key={label} className="border-t border-gray-100 dark:border-white/5">
+                    <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-100">{label}</td>
+                    {KO_ROUNDS.map(([round, stage]) => (
+                      <td
+                        key={round}
+                        className={
+                          "px-3 py-2 text-center font-bold tabular-nums " +
+                          (i === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-700 dark:text-neutral-200")
+                        }
+                      >
+                        +{plenoValue(stage) - offset}
+                      </td>
+                    ))}
+                  </tr>
+                ),
+              )}
               <tr className="border-t border-gray-100 dark:border-white/5">
                 <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-100">No participás</td>
                 <td colSpan={KO_ROUNDS.length} className="px-3 py-2 text-center tabular-nums text-gray-400 dark:text-neutral-500">—</td>
@@ -126,7 +128,8 @@ export default function ReglasPage() {
           </table>
         </div>
         <p className="mt-3 text-xs text-gray-400 dark:text-neutral-500">
-          Empates comparten puesto y puntos. Los jugadores de un equipo se bloquean cuando arranca su partido.
+          La relación entre puestos es la misma en todas las fases (sube junto con el pleno). Empates comparten
+          puesto y puntos. Los jugadores de un equipo se bloquean cuando arranca su partido.
         </p>
       </Section>
 

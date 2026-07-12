@@ -26,12 +26,11 @@ export async function currentRound(): Promise<string> {
 }
 
 // Puntos por puesto en cada ronda finalizada. El 1º vale el PLENO de esa ronda
-// (8 en 16vos … 12 en la final); del 2º en adelante es fijo: 6·5·4·3·2·1 (7º+).
-// No participar: nada.
-const ptsForRank = (rank: number, round: string) =>
-  rank === 1
-    ? plenoValue(round)
-    : rank === 2 ? 6 : rank === 3 ? 5 : rank === 4 ? 4 : rank === 5 ? 3 : rank === 6 ? 2 : 1
+// (8 en 16vos … 12 en la final); el 2º es −2 y de ahí −1 por puesto (3º −3, 4º −4,
+// … 7º y siguientes −7). La relación entre puestos es la misma en todas las fases,
+// desplazada según el pleno. No participar: nada.
+const rankOffset = (rank: number) => (rank === 1 ? 0 : Math.min(rank, 7))
+const ptsForRank = (rank: number, round: string) => plenoValue(round) - rankOffset(rank)
 
 export type RoundStanding = { userId: string; score: number; position: number; points: number }
 
@@ -42,7 +41,7 @@ export async function finalizedRounds(): Promise<Set<string>> {
 }
 
 // Standings por ronda — SOLO rondas finalizadas. Por ronda: suma de los 7 ratings
-// define el puesto; los puntos por puesto salen de ptsForRank (1º = pleno, 2º+ fijo).
+// define el puesto; los puntos salen de ptsForRank (1º = pleno, 2º −2, y −1 por puesto).
 // Empates comparten puesto y puntos. Solo equipos completos (7).
 async function computeRounds(): Promise<Map<string, RoundStanding[]>> {
   const [teams, scores, finalized] = await Promise.all([
