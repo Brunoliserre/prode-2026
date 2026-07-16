@@ -79,7 +79,9 @@ async function computeRounds(): Promise<Map<string, RoundStanding[]>> {
       .filter((t) => t.picks.length === 7)
       .map((t) => ({
         userId: t.userId,
-        score: t.picks.reduce((s, p) => s + (ratingOf.get(`${round}|${p.playerId}`) ?? 0), 0),
+        // Los ratings son a 1 decimal, así que la suma se redondea a 1 decimal:
+        // evita que un artefacto de punto flotante rompa un empate real (ej. 49.9 = 49.9).
+        score: Math.round(t.picks.reduce((s, p) => s + (ratingOf.get(`${round}|${p.playerId}`) ?? 0), 0) * 10) / 10,
       }))
       .sort((a, b) => b.score - a.score)
 
