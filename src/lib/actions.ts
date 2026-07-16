@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { auth } from "./auth"
 import { prisma } from "./prisma"
 import { calcPoints, PICK_POINTS, TOURNAMENT_START } from "./utils"
+import { stagesForRound } from "./dreamteam-scoring"
 import { FORMATIONS, lineCounts, type Formation, type Pos } from "./formations"
 import { announcementEmail, joinRequestEmail, reminderEmail, sendAdminEmail, sendBulkEmail } from "./email"
 
@@ -339,7 +340,7 @@ export async function saveDreamTeam(
 
   const now = new Date()
   const rf = await prisma.fixture.findMany({
-    where: { stage: round },
+    where: { stage: { in: stagesForRound(round) } },
     select: { homeTeam: true, awayTeam: true, matchDate: true },
   })
 

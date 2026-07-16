@@ -4,11 +4,23 @@ import { PLAYER_BY_ID } from "./dreamteam-mock"
 import type { Formation, Pos } from "./formations"
 import type { PitchPlayer } from "@/components/DreamTeamPitch"
 
-export const KO_ORDER = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "THIRD_PLACE", "FINAL"]
+// Rondas del Dream Team. El 3er puesto y la final se juegan como UNA sola fecha
+// ("FINAL"), para que con 4 equipos vivos siga entrando el tope de 2 por equipo.
+export const KO_ORDER = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "FINAL"]
 export const KO_LABEL: Record<string, string> = {
   LAST_32: "16vos", LAST_16: "8vos", QUARTER_FINALS: "4tos",
-  SEMI_FINALS: "Semis", THIRD_PLACE: "3er puesto", FINAL: "Final",
+  SEMI_FINALS: "Semis", FINAL: "Final y 3er puesto",
 }
+
+// Fixtures (stages reales) que componen cada ronda del Dream Team.
+const ROUND_STAGES: Record<string, string[]> = {
+  LAST_32: ["LAST_32"], LAST_16: ["LAST_16"], QUARTER_FINALS: ["QUARTER_FINALS"],
+  SEMI_FINALS: ["SEMI_FINALS"], FINAL: ["FINAL", "THIRD_PLACE"],
+}
+export const stagesForRound = (round: string): string[] => ROUND_STAGES[round] ?? [round]
+// stage real → ronda del Dream Team.
+const ROUND_OF_STAGE = new Map<string, string>()
+for (const r of KO_ORDER) for (const s of stagesForRound(r)) ROUND_OF_STAGE.set(s, r)
 
 // Ronda activa: la primera (en orden) con algún partido sin jugar; si están
 // todas jugadas, la última presente. Sin eliminatorias → LAST_32.
@@ -17,9 +29,11 @@ export async function currentRound(): Promise<string> {
     where: { stage: { notIn: ["GROUP_STAGE"] }, NOT: { stage: null } },
     select: { stage: true, homeScore: true, awayScore: true },
   })
-  const present = KO_ORDER.filter((s) => ko.some((f) => f.stage === s))
+  const present = KO_ORDER.filter((r) => stagesForRound(r).some((s) => ko.some((f) => f.stage === s)))
   return (
-    present.find((s) => ko.some((f) => f.stage === s && (f.homeScore == null || f.awayScore == null))) ??
+    present.find((r) =>
+      stagesForRound(r).some((s) => ko.some((f) => f.stage === s && (f.homeScore == null || f.awayScore == null))),
+    ) ??
     present[present.length - 1] ??
     "LAST_32"
   )
@@ -201,8 +215,9 @@ export async function othersDreamTeams(): Promise<OthersRound[]> {
   const fixturesByRound = new Map<string, Date[]>()
   for (const f of koFixtures) {
     if (!f.stage) continue
-    if (!fixturesByRound.has(f.stage)) fixturesByRound.set(f.stage, [])
-    fixturesByRound.get(f.stage)!.push(f.matchDate)
+    const round = ROUND_OF_STAGE.get(f.stage) ?? f.stage
+    if (!fixturesByRound.has(round)) fixturesByRound.set(round, [])
+    fixturesByRound.get(round)!.push(f.matchDate)
   }
   const revealed = (round: string) =>
     finalized.has(round) ||

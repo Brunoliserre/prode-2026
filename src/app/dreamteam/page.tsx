@@ -7,7 +7,7 @@ import { MyDreamTeams } from "@/components/MyDreamTeams"
 import { OthersDreamTeams } from "@/components/OthersDreamTeams"
 import { DreamTeamStats } from "@/components/DreamTeamStats"
 import { FORMATIONS, type Formation } from "@/lib/formations"
-import { currentRound, KO_LABEL, myDreamTeams, dreamTeamStandings, othersDreamTeams, dreamTeamStats } from "@/lib/dreamteam-scoring"
+import { currentRound, KO_LABEL, stagesForRound, myDreamTeams, dreamTeamStandings, othersDreamTeams, dreamTeamStats } from "@/lib/dreamteam-scoring"
 
 export const revalidate = 0
 export const metadata = { title: "Dream Team" }
@@ -23,7 +23,7 @@ export default async function DreamTeamPage() {
   // Equipos bloqueados: los de la ronda cuyo partido ya arrancó.
   const now = new Date()
   const roundFixtures = await prisma.fixture.findMany({
-    where: { stage: round },
+    where: { stage: { in: stagesForRound(round) } },
     select: { homeTeam: true, awayTeam: true, matchDate: true },
   })
   const lockedTeams = [
